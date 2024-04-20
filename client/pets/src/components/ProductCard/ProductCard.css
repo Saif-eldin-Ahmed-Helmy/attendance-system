@@ -1,0 +1,86 @@
+.product-card {
+    position: relative;
+    width: 18rem;
+    height: 100px;
+}
+
+.product-card-body {
+    height: 150px;
+}
+
+.product-card .image-container img {
+    width: 100%;
+    height: 200px;
+    object-fit: contain;
+}
+
+.product-card:hover .favorite-button,
+.product-card:hover .buy-button,
+.product-card:hover .buy-button-ofs{
+    visibility: visible;
+}
+
+.favorite-button:hover,
+.favorite-button:focus,
+.favorite-button:active {
+    background-image: linear-gradient(gold, gold);
+}
+
+.favorite-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    visibility: hidden;
+    background: none;
+    color: inherit;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    outline: inherit;
+    font-size: 1.5em;
+    transition: all 0.3s ease;
+}
+
+.favorite-button:focus-visible {
+    color: #dac22d !important;
+    background-color: #dac22d !important;
+    box-shadow: 0 0 0 0.25rem rgba(253, 233, 13, 0.25) !important
+}
+
+.buy-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    visibility: hidden;
+    transition: all 0.3s ease;
+    background-image: linear-gradient(gold, gold);
+    border-color: #dabe1e !important;
+}
+
+.buy-button-ofs {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    visibility: hidden;
+    transition: all 0.3s ease;
+    border: 0 !important;
+    background-image: linear-gradient(gray, gray);
+}
+
+.heart-red {
+    color: red;
+}
+
+.heart-gray {
+    color: gray;
+}
+
+.product-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
