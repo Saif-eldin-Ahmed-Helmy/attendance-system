@@ -35,6 +35,10 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "pdf-parse": "^1.1.1",
+    "pdf2json": "^3.0.5",
+    "pdfjs-dist": "^4.1.392",
+    "pdfreader": "^3.0.2",
     "socket.io": "^4.7.2",
     "string-similarity": "^4.0.4"
   },

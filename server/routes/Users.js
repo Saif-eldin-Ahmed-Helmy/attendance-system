@@ -6,7 +6,6 @@ const bcrypt = require('bcrypt');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-//const FacebookStrategy = require('passport-facebook').Strategy;
 const { handleBadRequest, handleUnauthorized, handleServerError, handleUserNotFound} = require('../handlers/error');
 const {verifySession} = require("../middlewares/auth");
 const {attachUserDataToRequest} = require("../middlewares/attachUserData");
@@ -43,34 +42,6 @@ router.get('/google/callback',
 
         res.redirect('http://localhost:5173');
 });
-
-/*passport.use(new FacebookStrategy({
-        clientID: process.env.FACEBOOK_APP_ID,
-        clientSecret: process.env.FACEBOOK_APP_SECRET,
-        callbackURL: "/api/users/facebook/callback"
-    },
-    async function(accessToken, refreshToken, profile, cb) {
-        let user = await User.findOne({ email: profile.emails[0].value });
-        if (!user) {
-            user = await User.create({ email: profile.emails[0].value, name: profile.displayName });
-        }
-        cb(null, user);
-    }
-));
-
-router.get('/facebook', passport.authenticate('facebook', {scope: ['public_profile', 'email']})); @todo: figure out why the request fails if I send the scope of permissions I want
-
-router.get('/facebook/callback',
-    passport.authenticate('facebook', { failureRedirect: '/login' }),
-    function(req, res) {
-        const user = req.user;
-
-        if (!user) {
-            return handleUserNotFound(res);
-        }
-
-        res.redirect('/api/users/test');
-    });*/
 
 passport.use('local-login', new LocalStrategy({
     usernameField: 'email',
@@ -198,166 +169,6 @@ router.get('/logout', (req, res) => {
 router.use(verifySession);
 router.use(attachUserDataToRequest);
 
-router.get('/balance', async (req, res) => {
-    try {
-        res.json({ balance: req.user.balance });
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
-    }
-});
-
-router.post('/balance', async (req, res) => {
-    try {
-        const role = req.role;
-        if (role !== 'admin') {
-            return handleUnauthorized(res);
-        }
-
-        const { email, amount } = req.body;
-
-        await adjustUserBalance(email, amount, true, res);
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
-    }
-});
-
-router.delete('/balance', async (req, res) => {
-    try {
-        const role = req.role;
-        if (role !== 'admin') {
-            return handleUnauthorized(res);
-        }
-
-        const { email, amount } = req.body;
-
-        await adjustUserBalance(email, amount, false, res);
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
-    }
-});
-
-const adjustUserBalance = async (email, amount, add, res) => {
-    try {
-        if (!amount || isNaN(amount) || amount <= 0) {
-            return handleBadRequest(res, 'Invalid amount.');
-        }
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            return handleUserNotFound(res);
-        }
-
-        const parsedAmount = parseFloat(amount);
-        user.balance += add ? parsedAmount : -parsedAmount;
-        user.balance = Math.max(user.balance, 0);
-        await user.save();
-
-        res.json({ balance: user.balance });
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
-    }
-}
-
-router.get('/locations', async (req, res) => {
-    try {
-        const { locationId } = req.query;
-        if (locationId) {
-            const location = req.user.locations.find(loc => loc.locationId === locationId.toLowerCase());
-            if (!location) {
-                return handleBadRequest(res, 'Location not found.');
-            }
-            return res.json(location);
-        }
-        return res.json(req.user.locations);
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
-    }
-});
-
-router.post('/locations', async (req, res) => {
-    try {
-        const { locationId, locationSignature, apartmentNumber, floorNumber, streetName, city, phoneNumber } = req.body;
-
-        const index = req.user.locations.findIndex(loc => loc.locationId === locationId.toLowerCase());
-
-        if (index !== -1) {
-            return handleBadRequest(res, 'Location with this ID already exists.');
-        }
-
-        const newLocation = {
-            locationId,
-            locationSignature,
-            apartmentNumber,
-            floorNumber,
-            streetName,
-            city,
-            phoneNumber,
-        };
-
-        req.user.locations.push(newLocation);
-        await req.user.save();
-
-        res.json(req.user.locations);
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
-    }
-});
-
-router.put('/locations', async (req, res) => {
-   try {
-       const { oldLocationId, locationId, locationSignature, apartmentNumber, floorNumber, streetName, city, phoneNumber } = req.body;
-
-       const index = req.user.locations.findIndex(loc => loc.locationId === oldLocationId.toLowerCase());
-
-       if (index === -1) {
-           return handleBadRequest(res, 'Location not found.');
-       }
-
-       req.user.locations[index] = {
-           locationId,
-           locationSignature,
-           apartmentNumber,
-           floorNumber,
-           streetName,
-           city,
-           phoneNumber,
-       };
-       await req.user.save();
-
-       res.json(req.user.locations);
-   }
-    catch (error) {
-         console.error(error);
-         handleServerError(res);
-    }
-});
-
-router.delete('/locations', async (req, res) => {
-    try {
-        const {locationId} = req.body;
-
-        const indexToRemove = req.user.locations.findIndex(loc => loc.locationId === locationId.toLowerCase());
-
-        if (indexToRemove === -1) {
-            return handleBadRequest(res, 'Location not found.');
-        }
-
-        req.user.locations.splice(indexToRemove, 1);
-        await req.user.save();
-
-        res.json(req.user.locations);
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
-    }
-});
-
 router.put('/language', async (req, res) => {
     try {
         const { language } = req.body;
@@ -375,34 +186,21 @@ router.put('/language', async (req, res) => {
     }
 });
 
-router.get('/favorites', async (req, res) => {
-    try {
-        const user = req.user;
-        res.json({ favorites: user.favorites });
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
+router.get('/doctors', verifySession, attachUserDataToRequest, async (req, res) => {
+    if (req.user.role !== 'management') {
+        return res.status(403).send('Access denied');
     }
+    const doctors = await User.find({ role: 'doctor' });
+    const doctorsData = doctors.map(doctor => ({ _id: doctor._id, name: doctor.name }));
+    res.send(doctorsData);
 });
 
-router.post('/favorites', async (req, res) => {
-    try {
-        const user = req.user;
-        const { itemId } = req.body;
-
-        const index = user.favorites.indexOf(itemId);
-        if (index === -1) {
-            user.favorites.push(itemId);
-        } else {
-            user.favorites.splice(index, 1);
-        }
-
-        await user.save();
-        res.json({ favorites: user.favorites });
-    } catch (error) {
-        console.error(error);
-        handleServerError(res);
+router.get('/assistants', verifySession, attachUserDataToRequest, async (req, res) => {
+    if (req.user.role !== 'management') {
+        return res.status(403).send('Access denied');
     }
+    const assistants = await User.find({ role: 'teaching assistant' });
+    const assistantsData = assistants.map(assistant => ({ _id: assistant._id, name: assistant.name }));
+    res.send(assistantsData);
 });
-
 module.exports = router;

@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express'),
     app = express(),
     server = require("node:http").createServer(app),
-    { Server } = require("socket.io"),
     cookieParser = require('cookie-parser'),
     passport = require('passport'),
     session = require('express-session'),
@@ -10,19 +9,14 @@ const express = require('express'),
     cors = require('cors'),
 
     port = 3001,
-    
+
     connectToDatabase = require('./config/database'),
     mongooseConnectionPromise = connectToDatabase();
 
-const io = new Server(server, {
-    cors: {
-        origin: 'http://localhost:5173',
-        credentials: true,    
-    }
-});
-
-const chatIo = io.of("/chat");
-const chatHandler = require("./handlers/chat");
+app.use(cors({
+    origin: ["http://localhost:3001", "http://localhost:5173"],
+    credentials: true,
+}));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -45,34 +39,14 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-const routeNames = ['Cart', 'Chats', 'CouponCodes', 'Images', 'Items', 'Orders', 'Users'];
-routeNames.forEach(routeName => {
-    const route = require(`./routes/${routeName}`);
-    app.use(`/api/${routeName.toLowerCase()}`, route);
-});
+const usersRouter = require('./routes/Users');
+app.use('/api/users', usersRouter);
 
-// const usersRouter = require('./routes/Users');
-// app.use('/api/users', usersRouter);
+const studentsRouter = require('./routes/Students');
+app.use('/api/students', studentsRouter);
 
-// const itemsRouter = require('./routes/Items');
-// app.use('/api/items', itemsRouter);
-
-// const cartRouter = require('./routes/Cart');
-// app.use('/api/cart', cartRouter);
-
-// const imagesRouter = require('./routes/Images');
-// app.use('/api/images', imagesRouter);
-
-// const ordersRoute = require('./routes/Orders');
-// app.use('/api/orders', ordersRoute);
-
-// const couponRoute = require("./routes/CouponCodes");
-// app.use('./api/couponCodes', couponRoute);
-
-// const chatsRoute = require("./routes/Chats");
-// app.use('/api/chats', chatsRoute);
-
-chatHandler(userIo);
+const subjectsRouter = require('./routes/Subjects');
+app.use('/api/subjects', subjectsRouter);
 
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
