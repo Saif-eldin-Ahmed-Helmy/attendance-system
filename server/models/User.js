@@ -1,45 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
-const locationSchema = new mongoose.Schema({
-    locationId: {
-        type: String,
-        required: true,
-        lowercase: true,
-    },
-    locationSignature: { // this will be a fingerprint for the location of the user, probably gonna use longitude and latitude, when we get in a group call we can discuss this
-        type: String,
-        //required: true,
-    },
-    apartmentNumber: {
-        type: String,
-        required: true,
-    },
-    floorNumber: {
-        type: Number,
-        required: true,
-    },
-    streetName: {
-        type: String,
-        required: true,
-    },
-    city: {
-        type: String,
-        required: true,
-    },
-    phoneNumber: {
-        type: String,
-        required: true,
-    },
-    active: {
-        type: Boolean,
-    },
-    deleted: {
-        type: Boolean,
-        default: false
-    }
-});
-
 const userSchema = new mongoose.Schema({
     googleId: {
         type: String,
@@ -58,9 +19,14 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: 'user',
-        enum: ['user', 'driver', 'packageer', 'admin', 'support', 'doctor'],
+        default: 'unverified',
+        enum: ['management', 'doctor', 'teaching assistant', 'unverified'],
+        required: true
     },
+    subjects: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subject'
+    }],
     password: {
         type: String,
     },
@@ -68,23 +34,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-    },
-    locations: [locationSchema],
-    orders: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'Order',
-    },
-    shoppingCart: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'CartItem',
-    },
-    chats: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'Chat',
-    },
-    balance: {
-        type: Number,
-        default: 0,
     },
     gender: {
         type: String,
@@ -96,10 +45,6 @@ const userSchema = new mongoose.Schema({
     deleted: {
         type: Boolean,
         default: false,
-    },
-    favorites: {
-        type: [String], // Array of itemIds
-        default: [],
     },
 });
 

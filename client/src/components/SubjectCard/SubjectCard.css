@@ -1,0 +1,83 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    height: 22rem !important;
+    width: 19rem !important;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    position: relative;
+    text-align: left;
+    background-color: #fff;
+    border: .0625rem solid #dadce0;
+    border-radius: .5rem;
+}
+
+.card-body {
+    padding: 20px;
+    text-align: left;
+}
+
+.card-title {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.card-text {
+    text-align: center;
+    color: #777;
+    font-size: 18px;
+}
+
+.card-text .highlight {
+    color: #2e54e0;
+    font-weight: bold;
+}
+
+.card-text .highlight-assistant {
+    color: #2e54e0;
+    font-weight: bold;
+}
+
+.card-text .level {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+}
+
+.card-image {
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100px;
+    border-radius: 50%;
+}
+
+.bottomLine {
+    display: flex !important;
+    justify-content: space-between;
+}
+.studentsCount,
+.level {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.subjects-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.subject-card {
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+.subject-card:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease-in-out;
+}
