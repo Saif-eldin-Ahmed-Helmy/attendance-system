@@ -49,10 +49,10 @@ const LoginPage: React.FC = () => {
                     <Form.Label>Password</Form.Label>
                     <Form.Control style={{width: '100%'}} type="password" value={password} onChange={e => setPassword(e.target.value)} />
                 </Form.Group>
-                <ButtonComponent variant="primary" type="submit">Sign in</ButtonComponent>
+                <Button variant="primary" type="submit">Sign in</Button>
                 <div style={{marginTop: 10}}>
                     <a href={'/register'} style={{color: "gray"}}>Don't have an account? </a>
-                    <a href={'/register'} style={{color: "orange"}}>Create an account</a>
+                    <a href={'/register'} style={{color: "green"}}>Create an account</a>
                 </div>
 
             </Form>

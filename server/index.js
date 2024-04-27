@@ -7,6 +7,7 @@ const express = require('express'),
     session = require('express-session'),
     MongoStore = require('connect-mongo'),
     cors = require('cors'),
+    WebSocket = require('ws'),
 
     port = 3001,
 
@@ -20,6 +21,21 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
+
+const wss = new WebSocket.Server({ server:server });
+
+wss.on('connection', function connection(ws) {
+    console.log('A new client Connected!');
+    ws.send('Welcome New Client!');
+    ws.on('message', function incoming(message) {
+        console.log('received: %s', message);
+        wss.clients.forEach(function each(client) {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(message);
+            }
+        });
+    });
+});
 
 app.use(
     session({
@@ -39,6 +55,26 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+const sendToClients = (message) => {
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
+    });
+};
+
+app.post('/websocket/message', (req, res) => {
+    const { message } = req.body;
+    if (!message) {
+        return res.status(400).send('Message is required');
+    }
+
+    // Send message to all WebSocket clients
+    sendToClients(message);
+
+    res.status(200).send('Message sent to WebSocket clients');
+});
+
 const usersRouter = require('./routes/Users');
 app.use('/api/users', usersRouter);
 
@@ -47,6 +83,9 @@ app.use('/api/students', studentsRouter);
 
 const subjectsRouter = require('./routes/Subjects');
 app.use('/api/subjects', subjectsRouter);
+
+const cameraRouter = require('./routes/Camera');
+app.use('/api/camera', cameraRouter);
 
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);

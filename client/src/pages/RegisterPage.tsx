@@ -109,7 +109,7 @@ const RegisterPage: React.FC = () => {
                     <Form.Label>Date of Birth</Form.Label>
                     <Form.Control type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} />
                 </Form.Group>
-                <ButtonComponent variant="primary" type="submit">Register</ButtonComponent>
+                <Button variant="primary" type="submit">Register</Button>
             </Form>
         </div>
     );

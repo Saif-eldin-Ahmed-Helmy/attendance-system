@@ -38,7 +38,7 @@ const AttendanceSchema = new mongoose.Schema({
     toObject: {virtuals: true}
 });
 
-AttendanceSchema.pre('save', async function(next) {
+/*AttendanceSchema.pre('save', async function(next) {
     await this.populate('subject');
     const startWeek = this.subject.startWeek;
     const attendanceTime = this.lectureAttendanceTime || this.sectionAttendanceTime || new Date();
@@ -46,7 +46,7 @@ AttendanceSchema.pre('save', async function(next) {
     const diffInWeeks = Math.floor(diffInMs / (7 * 24 * 60 * 60 * 1000));
     this.week = diffInWeeks + 1;
     next();
-});
+});*/
 
 const Attendance = mongoose.model('Attendance', AttendanceSchema);
 
