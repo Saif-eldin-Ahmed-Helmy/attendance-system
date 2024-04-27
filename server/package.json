@@ -21,8 +21,11 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
+    "express-ws": "^5.0.2",
+    "fluent-ffmpeg": "^2.1.2",
     "fuzzy-search": "^3.2.1",
     "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
@@ -39,8 +42,11 @@
     "pdf2json": "^3.0.5",
     "pdfjs-dist": "^4.1.392",
     "pdfreader": "^3.0.2",
+    "sharp": "^0.33.3",
     "socket.io": "^4.7.2",
-    "string-similarity": "^4.0.4"
+    "string-similarity": "^4.0.4",
+    "tesseract.js": "^5.0.5",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -9,6 +9,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { handleBadRequest, handleUnauthorized, handleServerError, handleUserNotFound} = require('../handlers/error');
 const {verifySession} = require("../middlewares/auth");
 const {attachUserDataToRequest} = require("../middlewares/attachUserData");
+const Subject = require("../models/Subject");
 
 passport.use(new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
@@ -38,6 +39,7 @@ router.get('/google/callback',
 
         if (!user) {
             return handleUserNotFound(res);
+
         }
 
         res.redirect('http://localhost:5173');
@@ -203,4 +205,59 @@ router.get('/assistants', verifySession, attachUserDataToRequest, async (req, re
     const assistantsData = assistants.map(assistant => ({ _id: assistant._id, name: assistant.name }));
     res.send(assistantsData);
 });
+
+router.get('/teachers', verifySession, attachUserDataToRequest, async (req, res) => {
+    if (req.user.role !== 'management') {
+        return res.status(403).send('Access denied');
+    }
+
+    const { level, page, limit, search } = req.query;
+
+    const searchFilter = search ? { name: { $regex: search, $options: 'i' } } : {};
+
+    const teachers = await User.find({
+        role: { $in: ['teaching assistant', 'doctor'] },
+        ...searchFilter
+    })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+    let teachersData = teachers.map(teacher => ({
+        _id: teacher._id,
+        name: teacher.name,
+        role: teacher.role,
+    }));
+
+    const subjects = await Subject.find({
+        $or: [
+            { doctor: { $in: teachers.map(teacher => teacher._id) } },
+            { teachingAssistant: { $in: teachers.map(teacher => teacher._id) } }
+        ],
+        level: level ? Number(level) : { $exists: true } // filter subjects by level if specified
+    });
+
+    const subjectsData = subjects.map(subject => ({
+        _id: subject._id,
+        name: subject.name,
+        doctor: subject.doctor,
+        teachingAssistant: subject.teachingAssistant,
+        level: subject.level
+    }));
+
+    teachersData.forEach(teacher => {
+        teacher.subjects = subjectsData.filter(subject => subject.doctor.toString() === teacher._id.toString() || subject.teachingAssistant.toString() === teacher._id.toString());
+    });
+
+    teachersData = teachersData.filter(teacher => teacher.subjects.length > 0);
+
+    const totalTeachers = await User.countDocuments({
+        role: { $in: ['teaching assistant', 'doctor'] },
+        ...searchFilter
+    });
+
+    const maxPages = Math.ceil(totalTeachers / limit);
+
+    res.send({ items: teachersData, maxPages });
+});
+
 module.exports = router;

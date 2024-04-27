@@ -8,6 +8,7 @@ const Student = require('../models/Student');
 const {attachUserDataToRequest} = require("../middlewares/attachUserData");
 const fs = require('fs');
 const Subject = require("../models/Subject");
+const Attendance = require("../models/Attendance");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -29,6 +30,45 @@ router.get('/', verifySession, attachUserDataToRequest, async (req, res) => {
         await res.json(students);
     } catch (error) {
         handleServerError(res, error);
+    }
+});
+
+router.get('/list', async (req, res) => {
+    const { level, page = 1, limit = 10, search = '' } = req.query;
+    let filter = {};
+
+    if (level) {
+        filter.level = level;
+    }
+
+    if (search) {
+        filter.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { id: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    try {
+        const students = await Student.find(filter).populate('subjects.subject', 'name')
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        const totalStudents = await Student.countDocuments(filter);
+        const maxPages = Math.ceil(totalStudents / limit);
+
+        const studentsToSend = students.map(student => {
+            return {
+                id: student.id,
+                name: student.name,
+                level: student.level,
+                subjects: student.subjects.map(subject => subject.subject.name),
+            };
+        });
+
+        res.send({ items: studentsToSend, maxPages });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error fetching students');
     }
 });
 
@@ -106,5 +146,38 @@ async function processStudent(name, id, res, subjectId, groupId, sectionId) {
         res.status(500).send('Error processing student');
     }
 }
+
+router.get('/info', async (req, res) => {
+    console.log('received request from esp32');
+    const {id} = req.query;
+
+    console.log(req.query);
+    let student = await Student.findOne({ id: id });
+    if (student) {
+        res.send(student.name);
+    }
+    else {
+        res.send("Not Found");
+    }
+});
+
+router.get('/view/:id', async (req, res) => {
+    const { id } = req.params;
+
+    let student = await Student.findById(id).populate('subjects.subject');
+    if (!student) {
+        return res.status(404).send('Student not found');
+    }
+
+    student = student.toObject();
+    student.subjects = student.subjects.map(subject => ({
+        ...subject,
+        subject: subject.subject.name
+    }));
+
+    const attendances = await Attendance.find({ student: id }).populate('subject');
+
+    res.send({ student, attendances });
+});
 
 module.exports = router;

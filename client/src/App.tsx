@@ -10,6 +10,11 @@ import SubjectsPage from "./pages/SubjectsPage.tsx";
 import AddSubjectPage from "./pages/admins/AddSubjectPage.tsx";
 import SubjectDetailPage from "./pages/SubjectDetailPage.tsx";
 import UploadPage from "./pages/admins/UploadPage.tsx";
+import StudentsPage from "./pages/StudentsPage.tsx";
+import StudentDetailPage from "./pages/StudentDetailPage.tsx";
+import TeachersPage from "./pages/TeachersPage.tsx";
+import CamerasPage from "./pages/CamerasPage.tsx";
+import CameraDetailPage from "./pages/CameraDetailPage.tsx";
 
 function App() {
     return (
@@ -28,8 +33,13 @@ function App() {
                         <Route path="/admin/upload" element={<UploadPage />} />
                     </Route>
                     <Route element={<ProtectedRoute navigateTo="/login"/>}>
+                        <Route path="/students" element={<StudentsPage />} />
+                        <Route path="/students/:id" element={<StudentDetailPage />} />
                         <Route path="/subjects" element={<SubjectsPage />} />
                         <Route path="subject/:id" element={<SubjectDetailPage />} />
+                        <Route path="/teachers" element={<TeachersPage />} />
+                        <Route path="/cameras" element={<CamerasPage />} />
+                        <Route path="/cameras/:id" element={<CameraDetailPage />} />
                         <Route path="/user" element={<UserPage />} />
                     </Route>
                     <Route path="*" element={<NotFoundPage />} />
