@@ -22,7 +22,7 @@ router.get('/test', async (req, res) => {
 const cache = {};
 const idCache = { lastReadId: null, confirmed: false };
 
-router.post('/video-stream/:id', async (req, res) => {
+router.post('/video-stream/', async (req, res) => {
     const { id } = req.params;
     console.log('Received image data from ESP32-CAM:', id);
 
@@ -76,6 +76,7 @@ router.post('/video-stream/:id', async (req, res) => {
 
                             // Iterate over the lines
                             for (const line of lines) {
+                                console.log(line)
                                 // Check if the line contains the format "420230???" where "???" are any three digits
                                 const match = line.match(/420230\d{3}/);
                                 if (match) {

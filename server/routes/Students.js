@@ -85,25 +85,39 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         const groupId = req.body.group;
         const sectionId = req.body.section;
         const text = req.file.buffer.toString('utf8');
-
         const lines = text.split('\n');
 
-        const regex = /^\s*(\S+)\s+(\S+)\s+(.+)\s*$/;
+        // Enhanced regex for Arabic names and IDs
+        const studentRegex = /^\s*(\d{6,})\s+([\u0600-\u06FF\u0020\u0640\u0621-\u065F\u067E\u0686\u06AF]+)/;
 
         for (let line of lines) {
-            const match = line.match(regex);
+            // Skip empty lines and header lines
+            if (line.trim() === '' || line.includes('كود الطالب')) continue;
+
+            // Clean line and normalize Arabic characters
+            const cleanLine = line
+                .replace(/\s+/g, ' ')    // Replace multiple spaces with single
+                .replace(/[٠-٩]/g, m => m.charCodeAt(0) - 1632) // Convert Arabic numerals
+                .trim();
+
+            const match = cleanLine.match(studentRegex);
+
             if (match) {
                 const id = match[1];
-                const number = match[2];
-                const name = match[3];
-                console.log(id, number, name);
-                await processStudent(name, id, res, subjectId, groupId, sectionId);
-            }
-            else {
-                console.error('Invalid line:', line);
+                const name = match[2]
+                    .replace(/\d+$/, '')  // Remove any trailing numbers
+                    .trim();
+
+                // Basic validation
+                if (id.length >= 6 && name.length > 5) {
+                    await processStudent(name, id, res, subjectId, groupId, sectionId);
+                }
+            } else {
+                console.log('Skipped line:', cleanLine);
             }
         }
 
+        res.send('Students processed successfully');
     } catch (error) {
         console.error('Error processing text file:', error);
         res.status(500).send('Error processing text file');

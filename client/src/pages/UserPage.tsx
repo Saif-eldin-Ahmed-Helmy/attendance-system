@@ -18,6 +18,7 @@ const UserPage: React.FC = () => {
 
     //const email = authContext?.user?.email;
     const name = authContext?.user?.name;
+    const role = authContext?.user?.role;
     const preferredLanguage = authContext?.user?.preferredLanguage || 'en';
 
     const [error, setError] = useState<string | null>(null);
@@ -63,20 +64,9 @@ const UserPage: React.FC = () => {
             <ToastContainer/>
             {error && <Alert variant="danger">{error}</Alert>}
             <h1 style={{marginTop: 100}}>{name}</h1>
+            <h3>{role}</h3>
             <ButtonGroup style={{ margin: "20px" }}
                          vertical size="sm">
-                <Button className='account-settings-btn' href="/user/orders" style={{color: "black"}}>
-                    <FaHistory/> Orders History
-                </Button>
-                <Button className='account-settings-btn' href="/shop/favorites" style={{color: "black"}}>
-                    <FaStar /> Favorites
-                </Button>
-                <Button className='account-settings-btn' href="/user/settings" style={{color: "black"}}>
-                    <FaUserCog /> Account Settings
-                </Button>
-                <Button onClick={() => setShowModal(true)} className='account-settings-btn' style={{color: "black"}}>
-                    <FaLanguage /> Language
-                </Button>
                 <Modal show={showModal} onHide={() => setShowModal(false)} centered className="language-modal">
                     <Modal.Header closeButton>
                         <Modal.Title>Change Language</Modal.Title>

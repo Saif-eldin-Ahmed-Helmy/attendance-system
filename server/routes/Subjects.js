@@ -37,6 +37,10 @@ router.get('/', verifySession, attachUserDataToRequest, async (req, res) => {
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
     }
+    else {
+        res.status(404).send('Not Found');
+        return;
+    }
     subjects = await Subject.populate(subjects, { path: 'doctor teachingAssistant' });
     subjects = subjects.map(subject => {
         subject = subject.toObject();
@@ -97,7 +101,8 @@ router.post('/', verifySession, attachUserDataToRequest, async (req, res) => {
         schedule: {
             day: group.day,
             startTime: group.start,
-            endTime: group.end
+            endTime: group.end,
+            roomNumber: group.roomNumber
         }
     }));
 
@@ -106,7 +111,8 @@ router.post('/', verifySession, attachUserDataToRequest, async (req, res) => {
         schedule: {
             day: section.day,
             startTime: section.start,
-            endTime: section.end
+            endTime: section.end,
+            labNumber: section.labNumber
         }
     }));
 
