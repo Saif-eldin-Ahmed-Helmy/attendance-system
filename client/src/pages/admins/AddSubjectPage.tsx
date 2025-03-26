@@ -15,8 +15,8 @@ const AddSubjectPage: React.FC = () => {
     const [assistants, setAssistants] = useState<User[]>([]);
     const [numGroups, setNumGroups] = useState(1);
     const [numSections, setNumSections] = useState(0);
-    const [groupSchedules, setGroupSchedules] = useState(Array.from({length: numGroups}, () => ({ day: '', start: '', end: '' })));
-    const [sectionSchedules, setSectionSchedules] = useState(Array.from({length: numSections}, () => ({ day: '', start: '', end: '' })));
+    const [groupSchedules, setGroupSchedules] = useState(Array.from({length: numGroups}, () => ({ day: '', start: '', end: '', roomNumber: 0 })));
+    const [sectionSchedules, setSectionSchedules] = useState(Array.from({length: numSections}, () => ({ day: '', start: '', end: '', labNumber: 0 })));
     const [startWeek, setStartWeek] = useState('');
 
     const handleNumGroupsChange = (num: number) => {
@@ -24,7 +24,7 @@ const AddSubjectPage: React.FC = () => {
         setGroupSchedules(prevGroupSchedules => {
             const newGroupSchedules = [...prevGroupSchedules];
             while (newGroupSchedules.length < num) {
-                newGroupSchedules.push({ day: '', start: '', end: '' });
+                newGroupSchedules.push({ day: '', start: '', end: '', roomNumber: 0 });
             }
             while (newGroupSchedules.length > num) {
                 newGroupSchedules.pop();
@@ -38,7 +38,7 @@ const AddSubjectPage: React.FC = () => {
         setSectionSchedules(prevSectionSchedules => {
             const newSectionSchedules = [...prevSectionSchedules];
             while (newSectionSchedules.length < num) {
-                newSectionSchedules.push({ day: '', start: '', end: '' });
+                newSectionSchedules.push({ day: '', start: '', end: '', labNumber: 0 });
             }
             while (newSectionSchedules.length > num) {
                 newSectionSchedules.pop();
@@ -47,24 +47,35 @@ const AddSubjectPage: React.FC = () => {
         });
     };
 
-    const handleGroupScheduleChange = (index: number, field: keyof typeof groupSchedules[index], value: string) => {
-        setGroupSchedules(prevGroupSchedules => {
+    const handleGroupScheduleChange = (index: number, field: keyof typeof groupSchedules[number], value: string) => {
+        setGroupSchedules((prevGroupSchedules) => {
             const newGroupSchedules = [...prevGroupSchedules];
             if (!newGroupSchedules[index]) {
-                newGroupSchedules[index] = { day: '', start: '', end: '' };
+                newGroupSchedules[index] = { day: '', start: '', end: '', roomNumber: 0 };
             }
-            newGroupSchedules[index][field] = value;
+
+            if (field === 'roomNumber') {
+                newGroupSchedules[index][field] = Number(value);
+            } else {
+                newGroupSchedules[index][field] = value;
+            }
+
             return newGroupSchedules;
         });
     };
 
-    const handleSectionScheduleChange = (index: number, field: keyof typeof sectionSchedules[index], value: string) => {
+    const handleSectionScheduleChange = (index: number, field: keyof typeof sectionSchedules[number], value: string) => {
         setSectionSchedules(prevSectionSchedules => {
             const newSectionSchedules = [...prevSectionSchedules];
             if (!newSectionSchedules[index]) {
-                newSectionSchedules[index] = { day: '', start: '', end: '' };
+                newSectionSchedules[index] = { day: '', start: '', end: '', labNumber: 0 };
             }
-            newSectionSchedules[index][field] = value;
+
+            if (field === 'labNumber') {
+                newSectionSchedules[index][field] = Number(value);
+            } else {
+                newSectionSchedules[index][field] = value;
+            }
             return newSectionSchedules;
         });
     };
@@ -159,6 +170,7 @@ const AddSubjectPage: React.FC = () => {
                     </DropdownButton>
                     <Form.Control type="text" placeholder="Start Time" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" value={schedule.start} onChange={e => handleGroupScheduleChange(index, 'start', e.target.value)} />
                     <Form.Control type="text" placeholder="End Time" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" value={schedule.end} onChange={e => handleGroupScheduleChange(index, 'end', e.target.value)} />
+                    <Form.Control type="text" placeholder="Room Number" pattern="^([0-1]?[0-9]" value={schedule.roomNumber} onChange={e => handleGroupScheduleChange(index, 'roomNumber', e.target.value)} />
                 </div>
             ))}
             <Form.Group controlId="numSections">
@@ -179,6 +191,7 @@ const AddSubjectPage: React.FC = () => {
                     </DropdownButton>
                     <Form.Control type="text" placeholder="Start Time" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" value={schedule.start} onChange={e => handleSectionScheduleChange(index, 'start', e.target.value)} />
                     <Form.Control type="text" placeholder="End Time" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" value={schedule.end} onChange={e => handleSectionScheduleChange(index, 'end', e.target.value)} />
+                    <Form.Control type="text" placeholder="Lab Number" pattern="^([0-1]?[0-9]" value={schedule.labNumber} onChange={e => handleSectionScheduleChange(index, 'labNumber', e.target.value)} />
                 </div>
             ))}
             <Button variant="primary" type="submit">Add Subject</Button>

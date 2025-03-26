@@ -14,6 +14,14 @@ const ScheduleSchema = new mongoose.Schema({
     endTime: {
         type: String,
         required: true
+    },
+    roomNumber: {
+        type: Number,
+        required: false
+    },
+    labNumber: {
+        type: Number,
+        required: false
     }
 });
 

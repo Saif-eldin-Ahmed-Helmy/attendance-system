@@ -69,7 +69,7 @@ const UploadPage = () => {
 
     return (
         <form onSubmit={handleSubmit}>
-            <input type="file" accept="application/pdf" onChange={handleFileChange} required />
+            <input type="file" accept="text/plain" onChange={handleFileChange} required />
             <select value={selectedSubject} onChange={handleSubjectChange} required>
                 <option value="">Select a subject</option>
                 {subjects.map(subject => (
