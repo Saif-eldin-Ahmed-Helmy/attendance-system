@@ -87,6 +87,12 @@ app.use('/api/subjects', subjectsRouter);
 const cameraRouter = require('./routes/Camera');
 app.use('/api/camera', cameraRouter);
 
+const announcementRouter = require('./routes/Announcement');
+app.use('/api/announcement', announcementRouter);
+
+const materialRouter = require('./routes/Material');
+app.use('/api/material', materialRouter);
+
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
