@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {SetStateAction, useEffect, useState} from 'react';
 import './Navbar.css';
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
@@ -25,7 +25,7 @@ export const NavbarComponent = () => {
         return () => window.removeEventListener("scroll", onScroll);
     }, [])
 
-    const onUpdateActiveLink = (value) => {
+    const onUpdateActiveLink = (value: SetStateAction<string>) => {
         setActiveLink(value);
     }
 
@@ -48,6 +48,8 @@ export const NavbarComponent = () => {
                         <Nav.Link href="/teachers"
                                   className={activeLink === 'teachers' ? 'active navbar-link' : 'navbar-link'}
                                   onClick={() => onUpdateActiveLink('teachers')}>Teachers</Nav.Link>
+                        <Nav.Link href="/announcements" className={activeLink === 'announcements' ? 'active navbar-link' : 'navbar-link'}
+                                  onClick={() => onUpdateActiveLink('announcements')}>Announcements</Nav.Link>
                     </Nav>
                     <span className="navbar-text">
                         <div className="social-icon">

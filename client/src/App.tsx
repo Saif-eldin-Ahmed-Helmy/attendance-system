@@ -15,6 +15,8 @@ import StudentDetailPage from "./pages/StudentDetailPage.tsx";
 import TeachersPage from "./pages/TeachersPage.tsx";
 import CamerasPage from "./pages/CamerasPage.tsx";
 import CameraDetailPage from "./pages/CameraDetailPage.tsx";
+import Announcements from './pages/Announcements.tsx';
+import AnnouncementDetails from './pages/AnnouncementPage.tsx';
 
 function App() {
     return (
@@ -33,6 +35,8 @@ function App() {
                         <Route path="/admin/upload" element={<UploadPage />} />
                     </Route>
                     <Route element={<ProtectedRoute navigateTo="/login"/>}>
+                        <Route path="/announcements" element={<Announcements/>} />
+                        <Route path="/announcement/:id" element={<AnnouncementDetails />} />
                         <Route path="/students" element={<StudentsPage />} />
                         <Route path="/students/:id" element={<StudentDetailPage />} />
                         <Route path="/subjects" element={<SubjectsPage />} />
