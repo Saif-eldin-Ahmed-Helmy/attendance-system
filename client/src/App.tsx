@@ -1,6 +1,5 @@
 import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import Layout from "./pages/Layout.tsx";
-import './App.css';
 import LoginPage from "./pages/LoginPage.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
 import ProtectedRoute from "./routes/ProtectedRoute.tsx";
@@ -17,6 +16,8 @@ import CamerasPage from "./pages/CamerasPage.tsx";
 import CameraDetailPage from "./pages/CameraDetailPage.tsx";
 import Announcements from './pages/Announcements.tsx';
 import AnnouncementDetails from './pages/AnnouncementPage.tsx';
+import './App.css';
+import Materials from './pages/Materials.tsx';
 
 function App() {
     return (
@@ -37,6 +38,7 @@ function App() {
                     <Route element={<ProtectedRoute navigateTo="/login"/>}>
                         <Route path="/announcements" element={<Announcements/>} />
                         <Route path="/announcement/:id" element={<AnnouncementDetails />} />
+                        <Route path="/materials" element={<Materials />} />
                         <Route path="/students" element={<StudentsPage />} />
                         <Route path="/students/:id" element={<StudentDetailPage />} />
                         <Route path="/subjects" element={<SubjectsPage />} />

@@ -2,14 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import AnnouncementCard from '../components/AnnouncementsCard/AnnouncementsCards';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
-interface Announcement {
-  _id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-  lastUpdatedAt: string;
-}
+import Announcement from '../types/Announcement';
 
 const Announcements: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);

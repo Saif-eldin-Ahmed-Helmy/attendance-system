@@ -3,15 +3,7 @@ import SubjectCard from '../components/SubjectCard/SubjectCard.tsx';
 import {Form, Dropdown, DropdownButton, Button} from "react-bootstrap";
 import './SubjectsPage.css';
 import {Link} from "react-router-dom";
-
-interface Subject {
-    _id: string;
-    name: string;
-    doctor: string;
-    teachingAssistant: string;
-    studentsCount: number;
-    level: number;
-}
+import Subject from '../types/Subject.tsx';
 
 interface User {
     _id: string;

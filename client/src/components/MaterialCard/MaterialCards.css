@@ -1,0 +1,54 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    height: 22rem !important;
+    width: 19rem !important;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    position: relative;
+    text-align: left;
+    background-color: #fff;
+    border: .0625rem solid #dadce0;
+    border-radius: .5rem;
+}
+
+.card-body {
+    padding: 20px;
+    text-align: left;
+}
+
+.card-title {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.card-text {
+    text-align: center;
+    color: #777;
+    font-size: 18px;
+}
+
+.card-text .highlight {
+    color: #2e54e0;
+    font-weight: bold;
+}
+
+.materials-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.material-card {
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+.material-card:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease-in-out;
+}

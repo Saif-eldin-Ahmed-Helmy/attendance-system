@@ -46,7 +46,7 @@ const AnnouncementDetails: React.FC = () => {
             className="mb-4"
             style={{
               fontWeight: 'bold',
-              textAlign: 'left', // Align title to the left
+              textAlign: 'left',
             }}
           >
             {announcement.title}
@@ -58,8 +58,8 @@ const AnnouncementDetails: React.FC = () => {
             style={{
               fontSize: '1.2rem',
               lineHeight: '1.6',
-              whiteSpace: 'pre-wrap', // Preserve line breaks and spaces
-              textAlign: 'left', // Align content to the left
+              whiteSpace: 'pre-wrap',
+              textAlign: 'left',
             }}
           >
             {announcement.content}
