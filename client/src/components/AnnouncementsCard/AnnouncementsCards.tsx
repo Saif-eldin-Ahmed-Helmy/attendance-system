@@ -1,15 +1,9 @@
 import React from 'react';
 import { Card, Button } from 'react-bootstrap';
-import './AnnouncementsCards.css';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-
-interface Announcement {
-  _id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-  lastUpdatedAt: string;
-}
+import Announcement from '../../types/Announcement';
+import './AnnouncementsCards.css';
 
 interface AnnouncementCardProps {
   announcement: Announcement;
@@ -39,10 +33,10 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement, onEdi
         </div>
         <div className="d-flex justify-content-center align-items-center">
           <Button variant="warning" size="sm" className="me-2" onClick={() => onEdit(announcement)}>
-            Edit
+            <FaEdit className="me-1" /> Edit
           </Button>
           <Button variant="danger" size="sm" onClick={() => onDelete(announcement._id)}>
-            Delete
+            <FaTrash className="me-1" /> Delete
           </Button>
         </div>
       </Card.Body>

@@ -50,6 +50,8 @@ export const NavbarComponent = () => {
                                   onClick={() => onUpdateActiveLink('teachers')}>Teachers</Nav.Link>
                         <Nav.Link href="/announcements" className={activeLink === 'announcements' ? 'active navbar-link' : 'navbar-link'}
                                   onClick={() => onUpdateActiveLink('announcements')}>Announcements</Nav.Link>
+                        <Nav.Link href="/materials" className={activeLink === 'materials' ? 'active navbar-link' : 'navbar-link'}
+                                  onClick={() => onUpdateActiveLink('materials')}>Materials</Nav.Link>
                     </Nav>
                     <span className="navbar-text">
                         <div className="social-icon">
