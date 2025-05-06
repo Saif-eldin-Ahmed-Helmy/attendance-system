@@ -162,7 +162,7 @@ async function processStudent(name, id, res, subjectId, groupId, sectionId) {
 }
 
 router.get('/info', async (req, res) => {
-    console.log('received request from esp32');
+    console.log('received request from client');
     const {id} = req.query;
 
     console.log(req.query);

@@ -167,7 +167,7 @@ router.get('/populate', async (req, res) => {
             const currentWeek = Math.floor((now.getTime() - startWeekDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
 
             for (let weekNumber = 1; weekNumber <= currentWeek; weekNumber++) {
-                if (weekNumber === 11) {
+                if (weekNumber === 12) {
                     continue;
                 }
                 const students = await Student.find({'subjects.subject': subject._id});
