@@ -1,98 +1,194 @@
 require('dotenv').config();
-const express = require('express'),
-    app = express(),
-    server = require("node:http").createServer(app),
-    cookieParser = require('cookie-parser'),
-    passport = require('passport'),
-    session = require('express-session'),
-    MongoStore = require('connect-mongo'),
-    cors = require('cors'),
-    WebSocket = require('ws'),
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const passport = require('passport');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const cors = require('cors');
 
-    port = 3001,
+// Import configurations and services
+const connectToDatabase = require('./config/database');
+const PassportConfig = require('./src/config/passport.config');
+const { setupSwagger } = require('./src/config/swagger.config');
+const WebSocketService = require('./src/services/websocket.service');
 
-    connectToDatabase = require('./config/database'),
-    mongooseConnectionPromise = connectToDatabase();
+// Import middleware
+const { globalErrorHandler, notFoundHandler } = require('./src/middleware/error.middleware');
+const { apiLimiter } = require('./src/middleware/rateLimiter.middleware');
 
+const app = express();
+const server = require('node:http').createServer(app);
+const port = process.env.PORT || 3001;
+
+/**
+ * Initialize database connection
+ */
+connectToDatabase().then(() => {
+    console.log('✅ Database connected successfully');
+}).catch((error) => {
+    console.error('❌ Database connection failed:', error);
+    process.exit(1);
+});
+
+/**
+ * Configure CORS
+ */
 app.use(cors({
-    origin: ["http://localhost:3001", "http://localhost:5173"],
+    origin: [
+        process.env.CLIENT_URL || 'http://localhost:5173',
+        'http://localhost:3001'
+    ],
     credentials: true,
 }));
 
-app.use(express.json());
+/**
+ * Basic middleware setup
+ */
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-const wss = new WebSocket.Server({ server:server });
+/**
+ * Apply rate limiting to all API routes
+ */
+app.use('/api', apiLimiter);
 
-wss.on('connection', function connection(ws) {
-    console.log('A new client Connected!');
-    ws.send('Welcome New Client!');
-    ws.on('message', function incoming(message) {
-        console.log('received: %s', message);
-        wss.clients.forEach(function each(client) {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
-    });
-});
+/**
+ * Session configuration
+ */
+app.use(session({
+    secret: process.env.ACCESS_TOKEN_SECRET || 'fallback-secret-key',
+    name: 'attendance.sid',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        touchAfter: 24 * 3600 // Lazy session update
+    }),
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+        rolling: true,
+        httpOnly: true
+    },
+}));
 
-app.use(
-    session({
-        secret: process.env.ACCESS_TOKEN_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
-        cookie: {
-            secure: process.env.NODE_ENV === 'production', // set secure to true in production
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // set sameSite to 'none' in production and 'lax' in development
-            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-            rolling: true,
-        },
-    })
-);
-
+/**
+ * Initialize Passport authentication
+ */
 app.use(passport.initialize());
 app.use(passport.session());
+PassportConfig.initialize();
 
-const sendToClients = (message) => {
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(message);
-        }
-    });
-};
+/**
+ * Initialize WebSocket service
+ */
+WebSocketService.initialize(server);
 
+/**
+ * WebSocket message endpoint for hardware/external integration
+ */
 app.post('/websocket/message', (req, res) => {
     const { message } = req.body;
     if (!message) {
-        return res.status(400).send('Message is required');
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'MISSING_MESSAGE',
+                message: 'Message is required'
+            }
+        });
     }
 
-    // Send message to all WebSocket clients
-    sendToClients(message);
+    const sentCount = WebSocketService.broadcastMessage({
+        type: 'system_notification',
+        message,
+        timestamp: new Date().toISOString()
+    });
 
-    res.status(200).send('Message sent to WebSocket clients');
+    res.json({
+        success: true,
+        message: `Message sent to ${sentCount} clients`,
+        timestamp: new Date().toISOString()
+    });
 });
 
-const usersRouter = require('./routes/Users');
+/**
+ * API Routes
+ */
+const usersRouter = require('./routes/users.routes');
+const studentsRouter = require('./routes/students.routes');
+const subjectsRouter = require('./routes/subjects.routes');
+const cameraRouter = require('./routes/camera.routes');
+const announcementRouter = require('./routes/announcements.routes');
+const materialRouter = require('./routes/materials.routes');
+
 app.use('/api/users', usersRouter);
-
-const studentsRouter = require('./routes/Students');
 app.use('/api/students', studentsRouter);
-
-const subjectsRouter = require('./routes/Subjects');
 app.use('/api/subjects', subjectsRouter);
-
-const cameraRouter = require('./routes/Camera');
 app.use('/api/camera', cameraRouter);
-
-const announcementRouter = require('./routes/Announcement');
 app.use('/api/announcement', announcementRouter);
-
-const materialRouter = require('./routes/Material');
 app.use('/api/material', materialRouter);
 
+/**
+ * Setup API documentation
+ */
+setupSwagger(app);
+
+/**
+ * Health check endpoint
+ */
+app.get('/health', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Smart College Attendance System is running',
+        timestamp: new Date().toISOString(),
+        data: {
+            uptime: process.uptime(),
+            memoryUsage: process.memoryUsage(),
+            connectedClients: WebSocketService.getConnectedClientsCount()
+        }
+    });
+});
+
+/**
+ * 404 handler for undefined routes
+ */
+app.use(notFoundHandler);
+
+/**
+ * Global error handler (must be last middleware)
+ */
+app.use(globalErrorHandler);
+
+/**
+ * Start server
+ */
 server.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`🚀 Server is running on port ${port}`);
+    console.log(`📖 API Documentation: http://localhost:${port}/api-docs`);
+    console.log(`🔗 WebSocket Server initialized`);
+    console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+/**
+ * Graceful shutdown handling
+ */
+process.on('SIGTERM', () => {
+    console.log('🔄 SIGTERM received, shutting down gracefully...');
+    WebSocketService.shutdown();
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('🔄 SIGINT received, shutting down gracefully...');
+    WebSocketService.shutdown();
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+    });
 });

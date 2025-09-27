@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { verifySession, attachUserDataToRequest } = require('../middlewares/auth');
-const authController = require('../controllers/AuthController');
+
+const { verifySession } = require('../middlewares/auth');
+const { attachUserDataToRequest } = require('../middlewares/attachUserData');
+const authController = require('../controllers/auth.controller');
 
 // Google OAuth
 router.get('/google', authController.initiateGoogleAuth);
