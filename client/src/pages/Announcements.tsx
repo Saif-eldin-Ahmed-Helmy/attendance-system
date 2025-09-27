@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import api from '../services/api.service';
 import AnnouncementCard from '../components/AnnouncementsCard/AnnouncementsCards';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Announcement from '../types/Announcement';
+import { Announcement } from '../types/announcement.types';
 
 const Announcements: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -15,7 +15,8 @@ const Announcements: React.FC = () => {
   const fetchAnnouncements = async () => {
     try {
       const response = await api.get('/announcement');
-      const sortedAnnouncements = response.data.sort(
+      const raw = response.data?.data?.items || response.data; // support old & new shapes
+      const sortedAnnouncements = (raw || []).sort(
         (a: Announcement, b: Announcement) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       setAnnouncements(sortedAnnouncements);
