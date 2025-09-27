@@ -1,260 +1,312 @@
 import React, { useEffect, useState } from 'react';
+import { Container, Row, Col, Form, Button, Alert, Card, Pagination, Modal } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useApi, usePaginatedApi } from '../hooks/useApi';
+import { LoadingSpinner, SkeletonLoader, LoadingButton } from '../components/common/LoadingComponents';
 import MaterialCard from '../components/MaterialCard/MaterialCard';
-import api from '../services/api';
-import { Button, Row, Col, Modal, Form, Nav } from 'react-bootstrap';
-import Material from '../types/Mateial';
-import Subject from '../types/Subject';
-import { FaDoorClosed, FaRegSave } from 'react-icons/fa';
+import { Material, CreateMaterialRequest, MaterialFilters } from '../types/material.types';
+import { Subject } from '../types/subject.types';
+import { materialSchema } from '../utils/validation.utils';
+import api from '../services/api.service';
 
 const Materials: React.FC = () => {
-  const [materials, setMaterials] = useState<Material[]>([]);
+  const [filters, setFilters] = useState<MaterialFilters>({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState<boolean>(false);
-  const [modalData, setModalData] = useState<Partial<Material>>({});
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [activeSubject, setActiveSubject] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Fetch materials
-  const fetchMaterials = async () => {
-    try {
-      const response = await api.get('/material');
-      console.log('Materials from API:', response.data);
-      setMaterials(response.data);
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to fetch materials.');
-      setLoading(false);
-    }
-  };
+  const materialsApi = usePaginatedApi<Material>();
+  const subjectsApi = useApi<Subject[]>();
+  const createApi = useApi<Material>();
 
-  const fetchSubjects = async () => {
-    try {
-      const response = await api.get('/subjects');
-      console.log('Subjects API response:', response.data);
-
-      const subjectsData = Array.isArray(response.data)
-        ? response.data
-        : response.data.items
-          ? response.data.items
-          : [];
-
-      console.log('Processed subjects:', subjectsData);
-      setSubjects(subjectsData);
-    } catch (err) {
-      console.error('Failed to fetch subjects:', err);
-      setSubjects([]);
-    }
-  };
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<CreateMaterialRequest>({
+    resolver: yupResolver(materialSchema)
+  });
 
   useEffect(() => {
-    fetchMaterials();
-    fetchSubjects();
-  }, []);
-  
-  // Debug filtering when activeSubject changes
-  useEffect(() => {
-    if (activeSubject) {
-      console.log('Active subject:', activeSubject);
-      console.log('Filtered materials:', materials.filter(m => m.subjectId === activeSubject));
-      
-      // Check if subjectId format matches
-      const matchingMaterials = materials.filter(m => {
-        console.log(`Comparing material.subjectId: ${m.subjectId} with activeSubject: ${activeSubject}`);
-        return m.subjectId === activeSubject;
-      });
-      console.log('Matching materials:', matchingMaterials);
-    }
-  }, [activeSubject, materials]);
+    loadMaterials();
+    loadSubjects();
+  }, [currentPage, filters]);
 
-  const handleCreate = async () => {
-    try {
-      const { name, subjectId, link } = modalData;
-      if (!name || !subjectId || !link) {
-        alert('All fields are required.');
-        return;
-      }
-      await api.post('/material', { name, subjectId, link });
-      setShowModal(false);
-      setModalData({});
-      fetchMaterials();
-    } catch (err) {
-      alert('Failed to create material.');
-    }
-  };
-
-  const handleEdit = async () => {
-    try {
-      const { _id, name, subjectId, link } = modalData;
-      if (!_id || !name || !subjectId || !link) {
-        alert('All fields are required.');
-        return;
-      }
-      await api.put(`/material/${_id}`, { name, subjectId, link });
-      setShowModal(false);
-      setModalData({});
-      setIsEditing(false);
-      fetchMaterials();
-    } catch (err) {
-      alert('Failed to update material.');
-    }
-  };
-
-  const openCreateModal = () => {
-    setModalData({});
-    setIsEditing(false);
-    fetchSubjects().then(() => {
-      setShowModal(true);
+  const loadMaterials = async () => {
+    const params = new URLSearchParams({
+      page: currentPage.toString(),
+      limit: '12',
+      ...filters
     });
-  };
 
-  const openEditModal = (material: Material) => {
-    setModalData(material);
-    setIsEditing(true);
-    fetchSubjects().then(() => {
-      setShowModal(true);
-    });
-  };
-
-  const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/material/${id}`);
-      fetchMaterials();
+      await materialsApi.fetchPage(() => api.get(`/material?${params}`), { page: currentPage });
     } catch (err) {
-      alert('Failed to delete material.');
+      console.error('Failed to load materials:', err);
     }
   };
 
-  // Improved filtering logic with string normalization
-  const filteredMaterials = activeSubject
-    ? materials.filter(material => {
-        // Handle potential string/object ID inconsistencies
-        const materialSubjectId = String(material.subjectId).trim();
-        const activeSubjectId = String(activeSubject).trim();
-        return materialSubjectId === activeSubjectId;
-      })
-    : materials;
+  const loadSubjects = async () => {
+    try {
+      const response = await subjectsApi.execute(() => api.get('/subjects/list'));
+      if (response) {
+        setSubjects(response);
+      }
+    } catch (err) {
+      console.error('Failed to load subjects:', err);
+    }
+  };
 
-  if (loading) {
+  const handleCreateMaterial = async (data: CreateMaterialRequest) => {
+    try {
+      await createApi.execute(() => api.post('/material', data));
+      setShowCreateModal(false);
+      reset();
+      loadMaterials(); // Refresh materials list
+    } catch (err) {
+      console.error('Failed to create material:', err);
+    }
+  };
+
+  const handleFilterChange = (filterType: keyof MaterialFilters, value: string) => {
+    setFilters({ ...filters, [filterType]: value || undefined });
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  if (materialsApi.error) {
     return (
-      <div className="container mt-4 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
+      <Container className="mt-4">
+        <Alert variant="danger">
+          <Alert.Heading>Error Loading Materials</Alert.Heading>
+          <p>{materialsApi.error.message}</p>
+          <Button variant="outline-danger" onClick={() => {
+            materialsApi.reset();
+            loadMaterials();
+          }}>
+            Try Again
+          </Button>
+        </Alert>
+      </Container>
     );
   }
 
-  if (error) {
-    return <div className="container mt-4 text-center text-danger">{error}</div>;
-  }
-
   return (
-    <div className="container mt-4">
-      <h1 className="text-center mb-4">Materials</h1>
-      <Button className="mb-3" variant="success" onClick={openCreateModal}>
-        Add Material
-      </Button>
+    <Container fluid className="mt-4">
+      <Row className="mb-4">
+        <Col>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2 className="text-primary mb-0">
+              Course Materials ({materialsApi.pagination.totalItems})
+            </h2>
+            <Button variant="success" onClick={() => setShowCreateModal(true)}>
+              <i className="fas fa-plus me-2"></i>
+              Add Material
+            </Button>
+          </div>
 
-      {/* Subject Tabs - Centered */}
-      <Nav variant="tabs" className="mb-3 justify-content-center">
-        <Nav.Item>
-          <Nav.Link 
-            active={activeSubject === null} 
-            onClick={() => setActiveSubject(null)}
-          >
-            All Materials
-          </Nav.Link>
-        </Nav.Item>
-        {subjects.map(subject => (
-          <Nav.Item key={subject._id}>
-            <Nav.Link 
-              active={activeSubject === subject._id}
-              onClick={() => setActiveSubject(subject._id)}
-            >
-              {subject.name}
-            </Nav.Link>
-          </Nav.Item>
-        ))}
-      </Nav>
-
-      {/* Show message when no materials match the filter */}
-      {filteredMaterials.length === 0 && (
-        <div className="alert alert-info">
-          {activeSubject ? "No materials found for this subject" : "No materials available"}
-        </div>
-      )}
-      
-      <Row className="g-3">
-        {filteredMaterials.map((material) => (
-          <Col key={material._id} xs={12} sm={6} md={4} lg={3}>
-            <MaterialCard material={material} onEdit={openEditModal} onDelete={handleDelete} />
-          </Col>
-        ))}
+          {/* Filters */}
+          <Card className="mb-4">
+            <Card.Body>
+              <Row>
+                <Col md={4}>
+                  <Form.Group>
+                    <Form.Label>Filter by Subject</Form.Label>
+                    <Form.Select
+                      value={filters.subject || ''}
+                      onChange={(e) => handleFilterChange('subject', e.target.value)}
+                      disabled={materialsApi.loading || subjectsApi.loading}
+                    >
+                      <option value="">All Subjects</option>
+                      {subjects.map((subject) => (
+                        <option key={subject._id} value={subject._id}>
+                          {subject.name} ({subject.code})
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={4}>
+                  <Form.Group>
+                    <Form.Label>&nbsp;</Form.Label>
+                    <div>
+                      <Button
+                        variant="outline-secondary"
+                        onClick={clearFilters}
+                        disabled={materialsApi.loading}
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </Form.Group>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
       </Row>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      {/* Materials Grid */}
+      {materialsApi.loading && currentPage === 1 ? (
+        <Row>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <Col md={6} lg={4} xl={3} className="mb-3" key={index}>
+              <Card>
+                <Card.Body>
+                  <SkeletonLoader lines={4} />
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ) : (
+        <>
+          {materialsApi.items.length === 0 ? (
+            <Row>
+              <Col>
+                <Alert variant="info" className="text-center">
+                  <h5>No materials found</h5>
+                  <p>No course materials have been uploaded yet.</p>
+                  <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+                    Upload First Material
+                  </Button>
+                </Alert>
+              </Col>
+            </Row>
+          ) : (
+            <Row>
+              {materialsApi.items.map((material: Material) => (
+                <Col md={6} lg={4} xl={3} className="mb-3" key={material._id}>
+                  <MaterialCard material={material} />
+                </Col>
+              ))}
+            </Row>
+          )}
+
+          {/* Pagination */}
+          {materialsApi.pagination.totalPages > 1 && (
+            <Row className="mt-4">
+              <Col className="d-flex justify-content-center">
+                <Pagination>
+                  <Pagination.Prev
+                    disabled={!materialsApi.pagination.hasPrev || materialsApi.loading}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                  />
+                  {/* Pagination items */}
+                  <Pagination.Next
+                    disabled={!materialsApi.pagination.hasNext || materialsApi.loading}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                  />
+                </Pagination>
+              </Col>
+            </Row>
+          )}
+        </>
+      )}
+
+      {/* Create Material Modal */}
+      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>{isEditing ? 'Edit Material' : 'Add Material'}</Modal.Title>
+          <Modal.Title>Add New Material</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
+          {createApi.error && (
+            <Alert variant="danger" className="mb-3">
+              {createApi.error.message}
+            </Alert>
+          )}
+
+          <Form onSubmit={handleSubmit(handleCreateMaterial)}>
             <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
+              <Form.Label>Title *</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Enter material name"
-                value={modalData.name || ''}
-                onChange={(e) => setModalData({ ...modalData, name: e.target.value })}
+                placeholder="Enter material title"
+                {...register('title')}
+                isInvalid={!!errors.title}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.title?.message}
+              </Form.Control.Feedback>
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Subject</Form.Label>
+              <Form.Label>Description</Form.Label>
               <Form.Control
-                as="select"
-                value={modalData.subjectId || ''}
-                onChange={(e) => setModalData({ ...modalData, subjectId: e.target.value })}
-                className="form-select"
+                as="textarea"
+                rows={3}
+                placeholder="Enter material description (optional)"
+                {...register('description')}
+                isInvalid={!!errors.description}
+              />
+              <Form.Control.Feedback type="invalid">
+                {errors.description?.message}
+              </Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Subject *</Form.Label>
+              <Form.Select
+                {...register('subject')}
+                isInvalid={!!errors.subject}
               >
                 <option value="">Select a subject</option>
-                {subjects.length > 0 ? (
-                  subjects.map((subject) => (
-                    <option key={subject._id} value={subject._id}>
-                      {subject.name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No subjects available</option>
-                )}
-              </Form.Control>
-              {subjects.length === 0 && (
-                <Form.Text className="text-muted">
-                  Loading subjects or none available.
-                </Form.Text>
-              )}
+                {subjects.map((subject) => (
+                  <option key={subject._id} value={subject._id}>
+                    {subject.name} ({subject.code})
+                  </option>
+                ))}
+              </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {errors.subject?.message}
+              </Form.Control.Feedback>
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Material Link</Form.Label>
+              <Form.Label>Link</Form.Label>
               <Form.Control
-                type="text"
-                placeholder="Enter PDF link"
-                value={modalData.link || ''}
-                onChange={(e) => setModalData({ ...modalData, link: e.target.value })}
+                type="url"
+                placeholder="Enter material link (optional)"
+                {...register('link')}
+                isInvalid={!!errors.link}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.link?.message}
+              </Form.Control.Feedback>
             </Form.Group>
+
+            <div className="d-flex justify-content-end">
+              <Button
+                variant="secondary"
+                className="me-2"
+                onClick={() => setShowCreateModal(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                type="submit"
+                variant="primary"
+                loading={isSubmitting || createApi.loading}
+                loadingText="Creating..."
+              >
+                Create Material
+              </LoadingButton>
+            </div>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            <FaDoorClosed /> Cancel
-          </Button>
-          <Button variant="primary" onClick={isEditing ? handleEdit : handleCreate}>
-            <FaRegSave /> Save
-          </Button>
-        </Modal.Footer>
       </Modal>
-    </div>
+    </Container>
   );
 };
 
