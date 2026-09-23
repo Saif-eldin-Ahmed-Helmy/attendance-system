@@ -172,7 +172,7 @@ const SubjectDetailPage: React.FC = () => {
     });
 
     function downloadExcel(week: string) {
-        fetch(`http://localhost:3001/api/subjects/view/${id}/attendance/excel/${week}`)
+        fetch(`http://localhost:3001/api/subjects/view/${id}/attendance/excel/${week}`, { credentials: 'include' })
             .then(response => response.blob())
             .then(blob => {
                 const url = window.URL.createObjectURL(blob);

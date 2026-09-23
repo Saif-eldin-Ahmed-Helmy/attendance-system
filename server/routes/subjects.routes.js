@@ -2,22 +2,21 @@ const express = require('express');
 const router = express.Router();
 const { verifySession } = require('../middlewares/auth');
 const { attachUserDataToRequest } = require('../middlewares/attachUserData');
+const { requireVerifiedRole } = require('../middlewares/access');
 const subjectsController = require('../controllers/subjects.controller');
+router.use(verifySession, attachUserDataToRequest, requireVerifiedRole);
 
 // protected listing
-router.get('/', verifySession, attachUserDataToRequest, subjectsController.listSubjects);
+router.get('/', subjectsController.listSubjects);
 
 // simple list
-router.get('/list', verifySession, attachUserDataToRequest, subjectsController.listAllSubjects);
+router.get('/list', subjectsController.listAllSubjects);
 
 // create new subject
-router.post('/', verifySession, attachUserDataToRequest, subjectsController.createSubject);
+router.post('/', subjectsController.createSubject);
 
 // detail view
-router.get('/view/:id', verifySession, attachUserDataToRequest, subjectsController.viewSubject);
-
-// populate DB with random data
-router.get('/populate', subjectsController.populateDatabase);
+router.get('/view/:id', subjectsController.viewSubject);
 
 // excel export
 router.get('/view/:id/attendance/excel/:week', subjectsController.exportAttendanceExcel);

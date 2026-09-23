@@ -11,6 +11,17 @@
 
 A modern attendance tracking system using the **MERN stack** and **Raspberry Pi** hardware.
 
+> **Review status:** This repository contains the web client, API, OCR and attendance logic, plus screenshots and demo media. Raspberry Pi firmware/source is not in this repository. A fresh client build currently fails TypeScript compilation; the application and hardware workflow have not been verified end to end in this checkout. Treat the feature list below as prototype scope, not independently measured deployment or reliability evidence.
+
+## Local setup and access
+
+1. Use a recent Node.js release and a local MongoDB instance. For `server/`, copy `server/.env.example` to `server/.env` and set `MONGODB_URI`, `ACCESS_TOKEN_SECRET` (at least 32 characters), and a distinct `CAMERA_API_KEY`. For Compose, use the root `.env.example` as a guide for an ignored root `.env`. Never commit real values.
+2. In `server/`, run `npm ci`, then `npm test`. The test suite checks access boundaries without a database. `npm start` additionally requires MongoDB and any configured OAuth/provider dependencies.
+3. In `client/`, run `npm ci` and `npm run build`. As of this review, this command fails on preexisting TypeScript errors; resolving those errors is required before claiming a reproducible web build.
+4. Browser routes use a signed login session. Hardware requests to `/api/camera/attendance`, `/api/camera/current-subject`, `/api/camera/video-stream/`, and `/websocket/message` must provide the configured key in the `x-camera-api-key` header. WebSocket upgrades require a signed session. Management access is required for student uploads and camera changes.
+
+The database initializer creates indexes and **does not create a default administrator**. Provision a management account through a controlled process; public registration creates an unverified account. Compose requires explicit MongoDB and session secrets. A separate authorization/CSRF review is still needed before any public deployment.
+
 It allows students to check in using OCR, keypad, or RFID, and gives teachers full control over attendance, grades, and announcements via a secure web portal.
 
 ---

@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { verifySession, attachUserDataToRequest } = require('../middlewares/auth');
+const { verifySession } = require('../middlewares/auth');
+const { attachUserDataToRequest } = require('../middlewares/attachUserData');
+const { requireVerifiedRole } = require('../middlewares/access');
 const announcementController = require('../controllers/announcement.controller');
+router.use(verifySession, attachUserDataToRequest, requireVerifiedRole);
 
 // Route to create a new announcement
 router.post('/', announcementController.createAnnouncement);

@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const { ServerResponse } = require('node:http');
 const AppError = require('../utils/AppError');
 
 /**
@@ -12,6 +13,8 @@ class WebSocketService {
     this.reconnectionAttempts = new Map();
     this.maxReconnectionAttempts = 5;
     this.reconnectionDelay = 3000; // 3 seconds
+    this.pingIntervals = new Map();
+    this.cleanupInterval = null;
   }
 
   /**
@@ -19,9 +22,22 @@ class WebSocketService {
    * @param {Object} server - HTTP server instance
    * @returns {Promise<void>}
    */
-  initialize(server) {
+  initialize(server, sessionMiddleware) {
     try {
-      this.wss = new WebSocket.Server({ server });
+      this.wss = new WebSocket.Server({ noServer: true });
+      server.on('upgrade', (req, socket, head) => {
+        const reject = () => {
+          socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+          socket.destroy();
+        };
+        if (req.url !== '/') return reject();
+        sessionMiddleware(req, new ServerResponse(req), (error) => {
+          if (error || !req.session?.passport?.user) return reject();
+          this.wss.handleUpgrade(req, socket, head, (ws) => {
+            this.wss.emit('connection', ws, req);
+          });
+        });
+      });
       this.setupEventHandlers();
       console.log('WebSocket Service initialized successfully');
     } catch (error) {
@@ -43,7 +59,7 @@ class WebSocketService {
     });
 
     // Cleanup disconnected clients periodically
-    setInterval(() => {
+    this.cleanupInterval = setInterval(() => {
       this.cleanupDisconnectedClients();
     }, 30000); // Every 30 seconds
   }
@@ -118,25 +134,13 @@ class WebSocketService {
         parsedMessage = { type: 'text', data: message.toString() };
       }
 
-      console.log(`Message from client ${clientId}:`, parsedMessage);
-
-      // Handle different message types
+      // Clients may only ping. Attendance updates originate from server code.
       switch (parsedMessage.type) {
         case 'ping':
           this.sendToClient(clientId, { type: 'pong', timestamp: new Date().toISOString() });
           break;
-
-        case 'broadcast':
-          this.broadcastMessage(parsedMessage.data, clientId);
-          break;
-
-        case 'attendance_update':
-          this.handleAttendanceUpdate(parsedMessage.data);
-          break;
-
         default:
-          // Echo message to all other clients
-          this.broadcastMessage(parsedMessage, clientId);
+          this.sendToClient(clientId, { type: 'error', message: 'Client messages are not accepted' });
       }
     } catch (error) {
       console.error(`Error handling message from client ${clientId}:`, error);
@@ -155,6 +159,8 @@ class WebSocketService {
    * @param {string} reason - Close reason
    */
   handleDisconnection(clientId, code, reason) {
+    clearInterval(this.pingIntervals.get(clientId));
+    this.pingIntervals.delete(clientId);
     const client = this.clients.get(clientId);
     if (client) {
       console.log(`Client disconnected: ${clientId}, Code: ${code}, Reason: ${reason}`);
@@ -218,13 +224,11 @@ class WebSocketService {
   }
 
   /**
-   * Send attendance update to all clients
-   * @param {Object} attendanceData - Attendance data
+   * Notify clients to refresh attendance; student data is never broadcast globally.
    */
-  handleAttendanceUpdate(attendanceData) {
+  handleAttendanceUpdate() {
     const message = {
-      type: 'attendance_notification',
-      data: attendanceData,
+      type: 'attendance_changed',
       timestamp: new Date().toISOString()
     };
 
@@ -260,6 +264,7 @@ class WebSocketService {
       const client = this.clients.get(clientId);
       if (!client) {
         clearInterval(interval);
+        this.pingIntervals.delete(clientId);
         return;
       }
 
@@ -268,12 +273,14 @@ class WebSocketService {
         client.ws.terminate();
         this.clients.delete(clientId);
         clearInterval(interval);
+        this.pingIntervals.delete(clientId);
         return;
       }
 
       client.isAlive = false;
       client.ws.ping();
     }, 30000); // Ping every 30 seconds
+    this.pingIntervals.set(clientId, interval);
   }
 
   /**
@@ -339,6 +346,10 @@ class WebSocketService {
    * Shutdown WebSocket service
    */
   shutdown() {
+    clearInterval(this.cleanupInterval);
+    this.cleanupInterval = null;
+    for (const interval of this.pingIntervals.values()) clearInterval(interval);
+    this.pingIntervals.clear();
     if (this.wss) {
       console.log('Shutting down WebSocket service...');
 

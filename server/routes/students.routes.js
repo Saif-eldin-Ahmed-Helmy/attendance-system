@@ -3,18 +3,20 @@ const router = express.Router();
 const multer = require('multer');
 const { verifySession } = require('../middlewares/auth');
 const { attachUserDataToRequest } = require('../middlewares/attachUserData');
+const { requireManagement, requireVerifiedRole } = require('../middlewares/access');
 const studentsController = require('../controllers/students.controller');
 
 const upload = multer({ storage: multer.memoryStorage() });
+router.use(verifySession, attachUserDataToRequest, requireVerifiedRole);
 
 // Management-protected
-router.get('/', verifySession, attachUserDataToRequest, studentsController.listManagedStudents);
+router.get('/', requireManagement, studentsController.listManagedStudents);
 
-// Public listing
+// Authenticated listing
 router.get('/list', studentsController.listStudents);
 
 // File upload
-router.post('/upload', upload.single('file'), studentsController.uploadStudents);
+router.post('/upload', requireManagement, upload.single('file'), studentsController.uploadStudents);
 
 // Lookup by ID
 router.get('/info', studentsController.getStudentInfo);

@@ -1,4 +1,13 @@
 server/*.jpg
+.devagent/
+.agents/
+.codex/
+.gemini/
+.config/
+.idea/
+.vscode/
+.env.*
+!.env.example
 
 # Logs
 logs
@@ -131,5 +140,5 @@ dist
 
 CHANGELOG.md
 DOCKER.md
-.env.example
+!.env.example
 .idea
