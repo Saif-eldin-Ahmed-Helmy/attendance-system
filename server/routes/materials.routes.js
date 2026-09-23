@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { verifySession, attachUserDataToRequest } = require('../middlewares/auth');
+const { verifySession } = require('../middlewares/auth');
+const { attachUserDataToRequest } = require('../middlewares/attachUserData');
+const { requireVerifiedRole } = require('../middlewares/access');
 const materialController = require('../controllers/material.controller');
+router.use(verifySession, attachUserDataToRequest, requireVerifiedRole);
 
 // Route to create a new material
 router.post('/', materialController.createMaterial);

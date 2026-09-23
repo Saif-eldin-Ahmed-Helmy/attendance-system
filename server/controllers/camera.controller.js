@@ -63,13 +63,7 @@ const handleAttendance = [
             const result = await AttendanceService.processAttendance(id, location);
             
             // Broadcast attendance notification via WebSocket
-            WebSocketService.handleAttendanceUpdate({
-                student: result.student,
-                subject: result.subject,
-                sessionType: result.sessionType,
-                week: result.week,
-                timestamp: result.timestamp
-            });
+            WebSocketService.handleAttendanceUpdate();
 
             return sendSuccess(res, result, 'Attendance recorded successfully');
         } catch (error) {

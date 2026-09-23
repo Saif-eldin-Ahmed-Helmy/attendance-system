@@ -11,6 +11,17 @@
 
 A modern attendance tracking system using the **MERN stack** and **Raspberry Pi** hardware.
 
+> **Project scope:** Web client, API, OCR, attendance logic, and prototype demo media. Device firmware is outside this repository.
+
+## Local setup and access
+
+1. Use a recent Node.js release and a local MongoDB instance. For `server/`, copy `server/.env.example` to `server/.env` and set `MONGODB_URI`, `ACCESS_TOKEN_SECRET` (at least 32 characters), and a distinct `CAMERA_API_KEY`. For Compose, use the root `.env.example` as a guide for an ignored root `.env`. Never commit real values.
+2. In `server/`, run `npm ci`, then `npm test`. The test suite checks access boundaries without a database. `npm start` additionally requires MongoDB and any configured OAuth/provider dependencies.
+3. In `client/`, run `npm ci` and `npm run build`.
+4. Browser routes use a signed login session. Hardware requests to `/api/camera/attendance`, `/api/camera/current-subject`, `/api/camera/video-stream/`, and `/websocket/message` must provide the configured key in the `x-camera-api-key` header. WebSocket upgrades require a signed session. Management access is required for student uploads and camera changes.
+
+Staff workflows use management, doctor, and teaching-assistant roles.
+
 It allows students to check in using OCR, keypad, or RFID, and gives teachers full control over attendance, grades, and announcements via a secure web portal.
 
 ---

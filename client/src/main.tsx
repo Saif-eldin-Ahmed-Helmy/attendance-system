@@ -1,10 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import axios from 'axios'
 import App from './App.tsx'
 import 'jquery';
 import 'popper.js';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import 'bootstrap/dist/css/bootstrap.css'
+
+axios.defaults.withCredentials = true
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

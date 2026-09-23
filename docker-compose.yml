@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: attendance_admin_2025
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: attendance_system
     volumes:
       - mongodb_data:/data/db
@@ -34,9 +34,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      MONGODB_URI: mongodb://admin:attendance_admin_2025@mongodb:27017/attendance_system?authSource=admin
-      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:-your-super-secret-jwt-key-change-in-production-2025}
-      SESSION_SECRET: ${SESSION_SECRET:-your-super-secret-session-key-change-in-production-2025}
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:?Set ACCESS_TOKEN_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
       CLIENT_URL: http://localhost
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}

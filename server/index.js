@@ -15,6 +15,11 @@ const WebSocketService = require('./src/services/websocket.service');
 // Import middleware
 const { globalErrorHandler, notFoundHandler } = require('./src/middleware/error.middleware');
 const { apiLimiter } = require('./src/middleware/rateLimiter.middleware');
+const { requireCameraApiKey } = require('./middlewares/access');
+
+if (!process.env.ACCESS_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET.length < 32) {
+    throw new Error('ACCESS_TOKEN_SECRET must be configured with at least 32 characters');
+}
 
 const app = express();
 const server = require('node:http').createServer(app);
@@ -56,8 +61,8 @@ app.use('/api', apiLimiter);
 /**
  * Session configuration
  */
-app.use(session({
-    secret: process.env.ACCESS_TOKEN_SECRET || 'fallback-secret-key',
+const sessionMiddleware = session({
+    secret: process.env.ACCESS_TOKEN_SECRET,
     name: 'attendance.sid',
     resave: false,
     saveUninitialized: false,
@@ -72,7 +77,8 @@ app.use(session({
         rolling: true,
         httpOnly: true
     },
-}));
+});
+app.use(sessionMiddleware);
 
 /**
  * Initialize Passport authentication
@@ -84,12 +90,12 @@ PassportConfig.initialize();
 /**
  * Initialize WebSocket service
  */
-WebSocketService.initialize(server);
+WebSocketService.initialize(server, sessionMiddleware);
 
 /**
  * WebSocket message endpoint for hardware/external integration
  */
-app.post('/websocket/message', (req, res) => {
+app.post('/websocket/message', requireCameraApiKey, (req, res) => {
     const { message } = req.body;
     if (!message) {
         return res.status(400).json({
