@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api.service';
-import { ApiResponse, ApiError } from '../types/api.types';
+import { useState, useCallback } from 'react';
+import { ApiError } from '../types/api.types';
 
 /**
  * Custom hook for API requests with loading, error, and data state management
@@ -35,7 +34,7 @@ export function useApi<T = any>() {
       }
 
       const response = await requestFn();
-      const responseData = response.data?.data || response.data;
+      const responseData = response.data?.data ?? response.data?.user ?? response.data;
 
       setData(responseData);
 

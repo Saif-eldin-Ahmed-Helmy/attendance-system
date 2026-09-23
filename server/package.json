@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node --test test/security.test.js",
+    "test": "node --test test/*.test.js",
     "docker:build": "docker build -t attendance-backend .",
     "docker:run": "docker run -p 3001:3001 attendance-backend"
   },

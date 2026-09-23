@@ -1,3 +1,5 @@
+import type { User } from './auth.types';
+import type { Subject } from './subject.types';
 /**
  * Announcement and Material Types
  */

@@ -10,7 +10,7 @@ interface TeacherCardProps {
     subjects: { _id: string, name: string, level: number }[];
 }
 
-const TeacherCard: React.FC<TeacherCardProps> = ({ className, teacherId, teacherName, role, subjects }) => {
+const TeacherCard: React.FC<TeacherCardProps> = ({ className, teacherName, role, subjects }) => {
     const subjectsByLevel = subjects.reduce((acc, subject) => {
         if (!acc[subject.level]) {
             acc[subject.level] = [];
@@ -42,7 +42,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ className, teacherId, teacher
                     <span className="highlight">Role: {role === 'doctor' ? 'Doctor' : 'Teaching Assistant'}</span> <br/>
                     {Object.keys(subjectsByLevel).map(level => (
                         <span key={level}>
-                            {formatLevel(parseInt(level))} Level Subjects: {subjectsByLevel[level].join(', ')} <br/>
+                            {formatLevel(parseInt(level))} Level Subjects: {subjectsByLevel[Number(level)].join(', ')} <br/>
                          </span>
                     ))}
                 </Card.Text>

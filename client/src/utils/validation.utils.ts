@@ -103,6 +103,7 @@ export const announcementSchema = yup.object({
 });
 
 export const materialSchema = yup.object({
+  link: yup.string().url('Please enter a valid URL').optional(),
   title: yup
     .string()
     .min(3, 'Title must be at least 3 characters')

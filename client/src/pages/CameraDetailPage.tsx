@@ -12,7 +12,7 @@ interface CameraDetail {
 }
 
 interface Subject {
-    id: string;
+    _id: string;
     name: string;
     groupsCount: number;
     sectionsCount: number;
@@ -33,7 +33,7 @@ const CameraDetailPage: React.FC = () => {
             .then(response => response.json())
             .then(data => {
                 setCameraDetail(data);
-                setSelectedSubject(data.subjectId.name); // Set the selected subject to the current camera's subject name
+                setSelectedSubject(data.subjectId?.name || ''); // Set the selected subject to the current camera's subject name
                 setSelectedGroup(data.groupNumber ? data.groupNumber.toString() : ''); // Set the selected group to the current camera's group
                 setSelectedSection(data.sectionNumber ? data.sectionNumber.toString() : ''); // Set the selected section to the current camera's section
             })
@@ -43,7 +43,7 @@ const CameraDetailPage: React.FC = () => {
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => setSubjects(data))
+            .then(data => setSubjects(data.data?.items ?? data.data ?? data))
             .catch(error => console.error(error));
     }, [id]);
 
@@ -51,14 +51,14 @@ const CameraDetailPage: React.FC = () => {
         setSelectedGroup(e.target.value);
         setSelectedSection(''); // Reset the section to its default value
         // Update the camera's group
-        await axios.put(`http://localhost:3001/api/camera/${id}`, { groupNumber: e.target.value, sectionNumber: null });
+        await axios.put(`http://localhost:3001/api/camera/${id}`, { groupNumber: e.target.value, sectionNumber: null }, { withCredentials: true });
     };
 
     const handleSectionChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedSection(e.target.value);
         setSelectedGroup(''); // Reset the group to its default value
         // Update the camera's section
-        await axios.put(`http://localhost:3001/api/camera/${id}`, { sectionNumber: e.target.value, groupNumber: null });
+        await axios.put(`http://localhost:3001/api/camera/${id}`, { sectionNumber: e.target.value, groupNumber: null }, { withCredentials: true });
     };
 
     const handleSubjectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -68,7 +68,7 @@ const CameraDetailPage: React.FC = () => {
         // Update the camera's subject
         const subject = subjects.find(subject => subject.name === e.target.value);
         if (subject) {
-            await axios.put(`http://localhost:3001/api/camera/${id}`, { subjectId: subject.id });
+            await axios.put(`http://localhost:3001/api/camera/${id}`, { subjectId: subject._id }, { withCredentials: true });
         }
     };
 
@@ -88,31 +88,31 @@ const CameraDetailPage: React.FC = () => {
                 <ListGroup variant="flush">
                     <ListGroup.Item>
                         Subject ID:
-                        <Form.Control as="select" value={selectedSubject} onChange={handleSubjectChange}>
+                        <Form.Select value={selectedSubject} onChange={handleSubjectChange}>
                             <option value="">Select a subject</option>
                             {subjects.map(subject => (
                                 <option key={subject._id} value={subject.name}>{subject.name}</option>
                             ))}
-                        </Form.Control>
+                        </Form.Select>
                     </ListGroup.Item>
                     <ListGroup.Item>
                         Group Number:
-                        <Form.Control as="select" value={selectedGroup} onChange={handleGroupChange}>
+                        <Form.Select value={selectedGroup} onChange={handleGroupChange}>
                             <option value="">Select a group</option>
                             {selectedSubjectDetail && Array.from({ length: selectedSubjectDetail.groupsCount }, (_, index) => (
                                 <option key={index + 1} value={index + 1}>{index + 1}</option>
                             ))}
-                        </Form.Control>
+                        </Form.Select>
                     </ListGroup.Item>
                     {selectedSubjectDetail && selectedSubjectDetail.sectionsCount > 0 && (
                         <ListGroup.Item>
                             Section Number:
-                            <Form.Control as="select" value={selectedSection} onChange={handleSectionChange}>
+                            <Form.Select value={selectedSection} onChange={handleSectionChange}>
                                 <option value="">Select a section</option>
                                 {Array.from({ length: selectedSubjectDetail.sectionsCount }, (_, index) => (
                                     <option key={index + 1} value={index + 1}>{index + 1}</option>
                                 ))}
-                            </Form.Control>
+                            </Form.Select>
                         </ListGroup.Item>
                     )}
                 </ListGroup>

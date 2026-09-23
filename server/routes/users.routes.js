@@ -10,12 +10,13 @@ router.get('/google', authController.initiateGoogleAuth);
 router.get('/google/callback', authController.authenticateGoogleCallback, authController.googleCallback);
 
 // Local auth
-router.get('/', authController.localLogin);
-router.post('/', authController.localRegister);
+router.post('/login', authController.localLogin);
+router.post('/register', authController.localRegister);
 
 // Session & logout
 router.get('/session', authController.getSession);
-router.get('/logout', authController.logout);
+router.post('/logout', authController.logout);
+router.get('/profile', authController.getSession);
 
 router.use(verifySession, attachUserDataToRequest);
 router.put('/language', authController.updateLanguage);

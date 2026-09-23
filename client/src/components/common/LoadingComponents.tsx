@@ -72,6 +72,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
  * Button with integrated loading state
  */
 interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: string;
   loading?: boolean;
   loadingText?: string;
   children: React.ReactNode;
@@ -83,13 +84,14 @@ export const LoadingButton: React.FC<LoadingButtonProps> = ({
   children,
   disabled,
   className = '',
+  variant = 'primary',
   ...props
 }) => {
   return (
     <button
       {...props}
       disabled={disabled || loading}
-      className={`btn ${className} ${loading ? 'btn--loading' : ''}`}
+      className={`btn btn-${variant} ${className} ${loading ? 'btn--loading' : ''}`}
     >
       {loading && <div className="spinner spinner--small spinner--white" />}
       <span className={loading ? 'btn__text--loading' : ''}>

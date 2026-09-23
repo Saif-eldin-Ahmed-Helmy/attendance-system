@@ -22,6 +22,8 @@ if (!process.env.ACCESS_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET.length <
 }
 
 const app = express();
+const { requireTrustedOrigin } = require('./middlewares/origin');
+app.use(requireTrustedOrigin);
 const server = require('node:http').createServer(app);
 const port = process.env.PORT || 3001;
 

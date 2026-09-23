@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import Announcement from '../../types/Announcement';
+import { Announcement } from '../../types/announcement.types';
 import './AnnouncementsCards.css';
 
 interface AnnouncementCardProps {
@@ -27,7 +27,7 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement, onEdi
             </small>
             <br />
             <small>
-              Last Updated: {new Date(announcement.lastUpdatedAt).toLocaleDateString('en-GB')} {new Date(announcement.lastUpdatedAt).toLocaleTimeString()}
+              Last Updated: {new Date(announcement.updatedAt).toLocaleDateString('en-GB')} {new Date(announcement.updatedAt).toLocaleTimeString()}
             </small>
           </Card.Text>
         </div>

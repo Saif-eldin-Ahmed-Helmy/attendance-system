@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {Card, ListGroup, Accordion, Table, Button} from 'react-bootstrap';
 import './SubjectDetailPage.css';
-import {toast, ToastContainer} from 'react-toastify';
+import {ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import io from 'socket.io-client';
+
 
 interface Schedule {
     day: string;
@@ -51,11 +51,14 @@ interface Attendance {
     week: number;
 }
 
+interface EnrolledStudent { _id: string; id: string; name: string; group: number; section: number; subjects: { subject: string; group: number; section: number }[] }
+
 const SubjectDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [subjectDetail, setSubjectDetail] = useState<SubjectDetail | null>(null);
     const [attendances, setAttendances] = useState<Attendance[]>([]);
-    const [enrolledStudents, setEnrolledStudents] = useState<string[]>([]);
+    const [refresh, setRefresh] = useState(0);
+    const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([]);
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:3001/');
@@ -65,19 +68,11 @@ const SubjectDetailPage: React.FC = () => {
         };
 
         ws.onmessage = function(event) {
-            console.log('Message received from server:', event.data);
-            if (event.data.startsWith('SUCCESS|')) {
-                toast.success(event.data.substring(8), {
-                    position: toast.POSITION.BOTTOM_RIGHT,
-                    autoClose: 5000
-                });
-            }
-            else if (event.data.startsWith("ERROR|")) {
-                toast.error(event.data.substring(6), {
-                    position: toast.POSITION.BOTTOM_RIGHT,
-                    autoClose: 5000
-                });
-            }
+            try {
+                if (JSON.parse(event.data).type === 'attendance_changed') {
+                    setRefresh(value => value + 1);
+                }
+            } catch { /* Ignore non-JSON control messages. */ }
         };
 
         ws.onclose = function(event) {
@@ -101,7 +96,8 @@ const SubjectDetailPage: React.FC = () => {
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => {
+            .then(body => {
+                const data = body.data ?? body;
                 setSubjectDetail(data.subject);
                 if (data.attendances) {
                     setAttendances(data.attendances);
@@ -111,7 +107,7 @@ const SubjectDetailPage: React.FC = () => {
                 }
             })
             .catch(error => console.error(error));
-    }, [id]);
+    }, [id, refresh]);
 
     if (!subjectDetail) {
         return <div>Loading...</div>;
@@ -128,7 +124,7 @@ const SubjectDetailPage: React.FC = () => {
     }
 
     attendances.forEach(attendance => {
-        weeksMap[attendance.week.toString()].push(attendance);
+        (weeksMap[attendance.week.toString()] ??= []).push(attendance);
     });
 
     enrolledStudents.forEach(student => {
@@ -142,7 +138,7 @@ const SubjectDetailPage: React.FC = () => {
                     },
                     lectureAttendanceTime: null,
                     sectionAttendanceTime: null,
-                    subject: student.subject,
+                    subject: subjectDetail._id,
                     group: student.group,
                     section: student.section,
                     week: parseInt(weekNumber)
@@ -172,13 +168,14 @@ const SubjectDetailPage: React.FC = () => {
     });
 
     function downloadExcel(week: string) {
+        if (!subjectDetail) return;
         fetch(`http://localhost:3001/api/subjects/view/${id}/attendance/excel/${week}`, { credentials: 'include' })
             .then(response => response.blob())
             .then(blob => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${subjectDetail.name} (Dr. ${subjectDetail.doctor}) - ${week === 'total' ? 'Total' : `Week ${week}`}.xlsx`;
+                a.download = `${subjectDetail?.name} (Dr. ${subjectDetail?.doctor}) - ${week === 'total' ? 'Total' : `Week ${week}`}.xlsx`;
                 a.click();
             });
     }
@@ -234,6 +231,7 @@ const SubjectDetailPage: React.FC = () => {
                                 const currentWeek = Math.floor((now.getTime() - new Date(subjectDetail.startWeek).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
 
                                 const student = enrolledStudents.find(student => student._id === studentId);
+                                if (!student) return null;
                                 const lectureAttendanceCount = totalAttendanceMap[studentId].lectureAttendanceCount;
                                 const sectionAttendanceCount = totalAttendanceMap[studentId].sectionAttendanceCount;
                                 const lectureMark = Math.ceil((lectureAttendanceCount / currentWeek) * 5);

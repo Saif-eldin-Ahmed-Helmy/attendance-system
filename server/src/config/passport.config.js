@@ -33,7 +33,7 @@ class PassportConfig {
       try {
         const user = await User.findOne({ email }).lean();
 
-        if (!user || !user.password) {
+        if (!user || user.deleted || !user.password) {
           return done(null, false, {
             error: 'Invalid email or password',
             code: 'INVALID_CREDENTIALS'
@@ -96,18 +96,14 @@ class PassportConfig {
           });
         }
 
-        // Hash password
-        const saltRounds = 12;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
         // Create new user
         const newUser = await User.create({
           email,
-          password: hashedPassword,
+          password, // The User pre-save hook hashes this exactly once.
           name,
-          gender: gender || 'not_specified',
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-          role: 'student' // Default role
+          gender: ['male', 'female'].includes(gender) ? gender : undefined,
+          dateOfBirth: dateOfBirth || undefined,
+          role: 'unverified'
         });
 
         // Return user payload for session
@@ -148,7 +144,8 @@ class PassportConfig {
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/users/google/callback'
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/users/google/callback',
+      state: true
     }, async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0]?.value;
@@ -163,6 +160,7 @@ class PassportConfig {
         let user = await User.findOne({ email });
 
         if (user) {
+          if (user.deleted) return done(null, false);
           // Update Google ID if not set
           if (!user.googleId) {
             user.googleId = profile.id;
@@ -174,7 +172,7 @@ class PassportConfig {
             googleId: profile.id,
             email,
             name: profile.displayName || 'Google User',
-            role: 'student', // Default role
+            role: 'unverified',
             profilePicture: profile.photos?.[0]?.value
           });
         }
@@ -212,7 +210,7 @@ class PassportConfig {
           .populate('subjects', 'name code')
           .lean();
 
-        if (!user) {
+        if (!user || user.deleted) {
           return done(null, false);
         }
 

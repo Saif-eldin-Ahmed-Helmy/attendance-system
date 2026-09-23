@@ -1,3 +1,4 @@
+const Subject = require('../models/Subject');
 // controllers/studentController.js
 const StudentService = require('../src/services/student.service');
 const { asyncHandler } = require('../src/middleware/error.middleware');
@@ -44,10 +45,21 @@ const listManagedStudents = asyncHandler(async (req, res) => {
  *       200:
  *         $ref: '#/components/schemas/PaginatedResponse'
  */
+const allowedSubjectIds = async user => user.role === 'management' ? null :
+    Subject.find({ $or: [{ doctor: user._id }, { teachingAssistant: user._id }] }).distinct('_id');
+
+const restrictStudent = (student, ids) => {
+    if (!ids) return student;
+    const allowed = new Set(ids.map(String));
+    student.subjects = student.subjects.filter(s => allowed.has(String(s.subject?._id ?? s.subject)));
+    if (!student.subjects.length) throw new AppError('Access denied', 403, 'INSUFFICIENT_PERMISSIONS');
+    return student;
+};
+
 const listStudents = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, level, search } = req.query;
 
-    const filters = {};
+    const filters = { subjectIds: await allowedSubjectIds(req.user) };
     if (level) filters.level = parseInt(level);
     if (search) filters.search = search;
 
@@ -158,7 +170,8 @@ const getStudentInfo = asyncHandler(async (req, res) => {
     }
 
     try {
-        const student = await StudentService.getStudentById(id);
+        const subjectIds = await allowedSubjectIds(req.user);
+        const student = restrictStudent(await StudentService.getStudentById(id), subjectIds);
         return res.send(student.name);
     } catch (error) {
         if (error.errorCode === 'STUDENT_NOT_FOUND') {
@@ -184,8 +197,10 @@ const getStudentInfo = asyncHandler(async (req, res) => {
 const viewStudent = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const student = await StudentService.getStudentById(id);
-    const attendance = await StudentService.getStudentAttendance(id);
+    const subjectIds = await allowedSubjectIds(req.user);
+    const student = restrictStudent(await StudentService.getStudentById(id), subjectIds);
+    const records = await StudentService.getStudentAttendance(id);
+    const attendance = subjectIds ? records.filter(r => subjectIds.some(s => String(s) === String(r.subject?._id ?? r.subject))) : records;
 
     return sendSuccess(res, { student, attendance }, 'Student details retrieved successfully');
 });

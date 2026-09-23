@@ -48,6 +48,8 @@ const AttendanceSchema = new mongoose.Schema({
     next();
 });*/
 
+AttendanceSchema.index({ student: 1, subject: 1, week: 1, group: 1, section: 1 }, { unique: true });
+
 const Attendance = mongoose.model('Attendance', AttendanceSchema);
 
 module.exports = Attendance;

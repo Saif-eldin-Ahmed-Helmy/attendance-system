@@ -18,7 +18,7 @@ const UploadPage = () => {
     useEffect(() => {
         axios.get('http://localhost:3001/api/subjects/list', {withCredentials: true})
             .then(response => {
-                const filteredSubjects = response.data.map((subject: Subject) => ({
+                const filteredSubjects = (response.data.data?.items ?? response.data.data ?? response.data).map((subject: Subject) => ({
                     _id: subject._id,
                     name: subject.name,
                     groupsCount: subject.groupsCount,
@@ -30,31 +30,32 @@ const UploadPage = () => {
     }, []);
 
     const selectedSubjectDetail = useMemo(() => {
-        return subjects.find(subject => subject.name === selectedSubject);
+        return subjects.find(subject => subject._id === selectedSubject);
     }, [selectedSubject, subjects]);
 
-    const handleFileChange = (event) => {
-        setFile(event.target.files[0]);
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFile(event.target.files?.[0] ?? null);
     };
 
-    const handleSubjectChange = (event) => {
+    const handleSubjectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedSubject(event.target.value);
         setSelectedGroup('');
         setSelectedSection('');
     };
 
-    const handleGroupChange = (event) => {
+    const handleGroupChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedGroup(event.target.value);
         setSelectedSection('');
     };
 
-    const handleSectionChange = (event) => {
+    const handleSectionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedSection(event.target.value);
         setSelectedGroup('');
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (!file) return;
 
         const formData = new FormData();
         formData.append('file', file);
@@ -62,7 +63,7 @@ const UploadPage = () => {
         formData.append('group', selectedGroup);
         formData.append('section', selectedSection);
 
-        axios.post('http://localhost:3001/api/students/upload', formData)
+        axios.post('http://localhost:3001/api/students/upload', formData, { withCredentials: true })
             .then(response => alert(`File uploaded successfully, ${response}`))
             .catch(error => console.error(error));
     };

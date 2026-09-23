@@ -15,11 +15,12 @@ class StudentService {
    * @returns {Promise<Object>} Students list with pagination info
    */
   async getStudents(filters = {}, pagination = { page: 1, limit: 10 }) {
-    const { level, search } = filters;
+    const { level, search, subjectIds } = filters;
     const { page, limit } = pagination;
 
     const query = {};
 
+    if (subjectIds) query['subjects.subject'] = { $in: subjectIds };
     if (level) query.level = level;
     if (search) {
       query.$or = [
@@ -46,7 +47,7 @@ class StudentService {
       id: student.id,
       name: student.name,
       level: student.level,
-      subjects: student.subjects.map(s => s.subject?.name).filter(Boolean)
+      subjects: student.subjects.filter(s => !subjectIds || subjectIds.some(id => id.toString() === s.subject?._id.toString())).map(s => s.subject?.name).filter(Boolean)
     }));
 
     return {

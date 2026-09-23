@@ -266,6 +266,10 @@ const viewSubject = asyncHandler(async (req, res) => {
 
     const response = {
         ...subject,
+        subject: { ...subject, doctor: subject.doctor?.name || '', teachingAssistant: subject.teachingAssistant?.name || '' },
+        attendances: attendanceStats.records,
+        enrolledStudents: (await Student.find({ 'subjects.subject': id }).select('id name subjects').lean())
+            .map(student => ({ ...student, subjects: student.subjects.filter(s => String(s.subject) === id) })),
         studentsCount,
         attendanceStats: attendanceStats.statistics
     };

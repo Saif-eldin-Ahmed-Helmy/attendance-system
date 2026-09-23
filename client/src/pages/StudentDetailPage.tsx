@@ -1,19 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import {Card, ListGroup, Accordion, Table, Button} from 'react-bootstrap';
+import {Card, ListGroup, Accordion, Table} from 'react-bootstrap';
 import './StudentDetailPage.css';
-
-interface Schedule {
-    day: string;
-    startTime: string;
-    endTime: string;
-    _id: string;
-}
 
 interface Subject {
     subject: {
         _id: string;
         name: string;
+        startWeek: string;
     };
     group: number;
     section: number;
@@ -51,7 +45,8 @@ const StudentDetailPage: React.FC = () => {
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => {
+            .then(body => {
+                const data = body.data ?? body;
                 setStudentDetail(data.student);
                 if (data.attendances) {
                     setAttendances(data.attendances);
@@ -79,8 +74,8 @@ const StudentDetailPage: React.FC = () => {
     }
 
     attendances.forEach(attendance => {
-        weeksMap[attendance.week.toString()].push(attendance);
-    });c
+        (weeksMap[attendance.week.toString()] ??= []).push(attendance);
+    });
 
     Object.keys(weeksMap).forEach(weekNumber => {
         weeksMap[weekNumber].sort((a, b) => a.student.id.localeCompare(b.student.id));
@@ -90,14 +85,14 @@ const StudentDetailPage: React.FC = () => {
 
     Object.keys(weeksMap).forEach(weekNumber => {
         weeksMap[weekNumber].forEach(attendance => {
-            if (!totalAttendanceMap[attendance.student._id]) {
-                totalAttendanceMap[attendance.student._id] = { lectureAttendanceCount: 0, sectionAttendanceCount: 0 };
+            if (!totalAttendanceMap[attendance.subject]) {
+                totalAttendanceMap[attendance.subject] = { lectureAttendanceCount: 0, sectionAttendanceCount: 0 };
             }
             if (attendance.lectureAttendanceTime) {
-                totalAttendanceMap[attendance.student._id].lectureAttendanceCount++;
+                totalAttendanceMap[attendance.subject].lectureAttendanceCount++;
             }
             if (attendance.sectionAttendanceTime) {
-                totalAttendanceMap[attendance.student._id].sectionAttendanceCount++;
+                totalAttendanceMap[attendance.subject].sectionAttendanceCount++;
             }
         });
     });
@@ -119,7 +114,6 @@ const StudentDetailPage: React.FC = () => {
                     <Accordion.Header>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                             <h5>Total Attendance</h5>
-                            <Button variant="outline-primary" onClick={() => downloadExcel('total')}>Download Excel</Button>
                         </div>
                     </Accordion.Header>
                     <Accordion.Body>
@@ -129,12 +123,8 @@ const StudentDetailPage: React.FC = () => {
                                 <th>Subject</th>
                                 <th>Group</th>
                                 <th>Attendance (Count)</th>
-                                <th>Mark</th>
                                 <th>Section</th>
                                 <th>Attendance (Count)</th>
-                                <th>Mark</th>
-                                <th>Attendance Percentage</th>
-                                <th>Total Mark</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -143,12 +133,8 @@ const StudentDetailPage: React.FC = () => {
                                     <td>{subject.subject.name}</td>
                                     <td>{subject.group}</td>
                                     <td>{totalAttendanceMap[subject.subject._id]?.lectureAttendanceCount || 0}</td>
-                                    <td>{/* Calculate and display the lecture mark here */}</td>
                                     <td>{subject.section}</td>
                                     <td>{totalAttendanceMap[subject.subject._id]?.sectionAttendanceCount || 0}</td>
-                                    <td>{/* Calculate and display the section mark here */}</td>
-                                    <td>{/* Calculate and display the attendance percentage here */}</td>
-                                    <td>{/* Calculate and display the total mark here */}</td>
                                 </tr>
                             ))}
                             </tbody>
@@ -160,7 +146,6 @@ const StudentDetailPage: React.FC = () => {
                         <Accordion.Header>
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                                 <h5>Week {weekNumber}</h5>
-                                <Button variant="outline-primary" onClick={() => downloadExcel(weekNumber)}>Download Excel</Button>
                             </div>
                         </Accordion.Header>
                         <Accordion.Body>
@@ -175,15 +160,15 @@ const StudentDetailPage: React.FC = () => {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {studentDetail.subjects.map((subject, index) => {
+                                {studentDetail.subjects.map((subject) => {
                                     const attendancesForSubject = weeksMap[weekNumber].filter(attendance => attendance.subject === subject.subject._id);
                                     return attendancesForSubject.map((attendance, index) => (
                                         <tr key={index}>
                                             <td>{subject.subject.name}</td>
                                             <td>{subject.group}</td>
-                                            <td>{/* Calculate and display the lecture attendance here */}</td>
+                                            <td>{attendance.lectureAttendanceTime ? new Date(attendance.lectureAttendanceTime).toLocaleString() : 'Not recorded'}</td>
                                             <td>{attendance.section}</td>
-                                            <td>{/* Calculate and display the section attendance here */}</td>
+                                            <td>{attendance.sectionAttendanceTime ? new Date(attendance.sectionAttendanceTime).toLocaleString() : 'Not recorded'}</td>
                                         </tr>
                                     ));
                                 })}

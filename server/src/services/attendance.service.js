@@ -1,7 +1,6 @@
 const Attendance = require('../../models/Attendance');
 const Student = require('../../models/Student');
 const Subject = require('../../models/Subject');
-const Camera = require('../../models/Camera');
 const AppError = require('../utils/AppError');
 
 /**
@@ -45,6 +44,10 @@ class AttendanceService {
       throw new AppError('Student not enrolled in this subject', 400, 'NOT_ENROLLED');
     }
 
+    const enrolledNumber = type === 'ROOM' ? studentSubject.group : studentSubject.section;
+    const activeNumber = type === 'ROOM' ? activeSchedule.groupNumber : activeSchedule.sectionNumber;
+    if (enrolledNumber !== activeNumber) throw new AppError('Student is not enrolled in this session', 403, 'WRONG_SESSION');
+
     // Calculate current week
     const currentWeek = this.calculateCurrentWeek(activeSubject.startWeek);
 
@@ -87,19 +90,6 @@ class AttendanceService {
     const currentDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
     const currentTime = now.getHours() + now.getMinutes() / 60;
 
-    // Check special camera configuration first
-    const specialCamera = await Camera.findOne({ cameraId: 'R001' });
-    if (specialCamera?.subjectId) {
-      const activeSubject = await Subject.findById(specialCamera.subjectId)
-        .populate('doctor teachingAssistant');
-
-      const activeSchedule = specialCamera.groupNumber
-        ? { groupNumber: specialCamera.groupNumber }
-        : { sectionNumber: specialCamera.sectionNumber };
-
-      return { activeSubject, activeSchedule };
-    }
-
     // Find subjects with matching location and time
     const locationField = type === 'ROOM' ? 'groups' : 'sections';
     const locationNumberField = type === 'ROOM' ? 'roomNumber' : 'labNumber';
@@ -112,7 +102,7 @@ class AttendanceService {
       const schedules = subject[locationField];
 
       for (const schedule of schedules) {
-        if (this.isScheduleActive(schedule.schedule, currentDay, currentTime)) {
+        if (schedule.schedule?.[locationNumberField] === Number(number) && this.isScheduleActive(schedule.schedule, currentDay, currentTime)) {
           return { activeSubject: subject, activeSchedule: schedule };
         }
       }
@@ -145,38 +135,25 @@ class AttendanceService {
   async createOrUpdateAttendance(attendanceData) {
     const { student, subject, week, group, section, isLecture } = attendanceData;
 
-    let attendance = await Attendance.findOne({
-      student,
-      subject,
-      week,
-      group,
-      section
-    });
-
-    const now = new Date();
+    const identity = { student, subject, week, group: group ?? null, section: section ?? null };
     const timeField = isLecture ? 'lectureAttendanceTime' : 'sectionAttendanceTime';
-
-    if (attendance) {
-      if (attendance[timeField]) {
+    try {
+      const result = await Attendance.findOneAndUpdate(
+        { ...identity, [timeField]: null },
+        { $setOnInsert: identity, $set: { [timeField]: new Date() } },
+        { upsert: true, new: true, includeResultMetadata: true, runValidators: true }
+      );
+      const created = !!result.lastErrorObject?.upserted;
+      return { action: created ? 'created' : 'updated', previousRecord: !created };
+    } catch (error) {
+      if (error.code === 11000) {
+        const updated = await Attendance.findOneAndUpdate(
+          { ...identity, [timeField]: null }, { $set: { [timeField]: new Date() } }, { new: true }
+        );
+        if (updated) return { action: 'updated', previousRecord: true };
         throw new AppError('Attendance already recorded', 400, 'ALREADY_RECORDED');
       }
-
-      attendance[timeField] = now;
-      await attendance.save();
-
-      return { action: 'updated', previousRecord: true };
-    } else {
-      attendance = new Attendance({
-        student,
-        subject,
-        week,
-        group,
-        section,
-        [timeField]: now
-      });
-
-      await attendance.save();
-      return { action: 'created', previousRecord: false };
+      throw error;
     }
   }
 

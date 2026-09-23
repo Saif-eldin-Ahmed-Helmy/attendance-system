@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {Form, Button, Alert, InputGroup} from 'react-bootstrap';
 import {useNavigate} from "react-router-dom";
-import ButtonComponent from "../components/Button/Button.tsx";
 
 const RegisterPage: React.FC = () => {
     const [firstName, setFirstName] = useState('');

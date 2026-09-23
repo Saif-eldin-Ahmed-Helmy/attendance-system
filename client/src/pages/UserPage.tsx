@@ -3,10 +3,6 @@ import {useNavigate} from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import {Alert, Modal, Form, ButtonGroup, Button} from "react-bootstrap";
 import {
-    FaHistory,
-    FaStar,
-    FaUserCog,
-    FaLanguage,
     FaSignOutAlt,
 } from 'react-icons/fa';
 import ButtonComponent from "../components/Button/Button.tsx";

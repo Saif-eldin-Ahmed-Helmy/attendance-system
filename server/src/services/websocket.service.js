@@ -31,6 +31,8 @@ class WebSocketService {
           socket.destroy();
         };
         if (req.url !== '/') return reject();
+        const { allowedOrigins } = require('../../middlewares/origin');
+        if (req.headers.origin && !allowedOrigins().includes(req.headers.origin)) return reject();
         sessionMiddleware(req, new ServerResponse(req), (error) => {
           if (error || !req.session?.passport?.user) return reject();
           this.wss.handleUpgrade(req, socket, head, (ws) => {

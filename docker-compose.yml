@@ -37,6 +37,7 @@ services:
       MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI}
       ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:?Set ACCESS_TOKEN_SECRET}
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
+      CAMERA_API_KEY: ${CAMERA_API_KEY:?Set CAMERA_API_KEY}
       CLIENT_URL: http://localhost
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
@@ -81,26 +82,9 @@ services:
       retries: 3
       start_period: 30s
 
-  # Redis for Session Storage (Optional - enhances performance)
-  redis:
-    image: redis:7-alpine
-    container_name: attendance-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass attendance_redis_2025
-    volumes:
-      - redis_data:/data
-    networks:
-      - attendance-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
 
 volumes:
   mongodb_data:
-    driver: local
-  redis_data:
     driver: local
   backend_uploads:
     driver: local

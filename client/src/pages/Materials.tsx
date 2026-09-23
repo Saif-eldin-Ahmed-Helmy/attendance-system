@@ -3,7 +3,7 @@ import { Container, Row, Col, Form, Button, Alert, Card, Pagination, Modal } fro
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useApi, usePaginatedApi } from '../hooks/useApi';
-import { LoadingSpinner, SkeletonLoader, LoadingButton } from '../components/common/LoadingComponents';
+import { SkeletonLoader, LoadingButton } from '../components/common/LoadingComponents';
 import MaterialCard from '../components/MaterialCard/MaterialCard';
 import { Material, CreateMaterialRequest, MaterialFilters } from '../types/material.types';
 import { Subject } from '../types/subject.types';
@@ -25,7 +25,7 @@ const Materials: React.FC = () => {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting }
-  } = useForm<CreateMaterialRequest>({
+  } = useForm({
     resolver: yupResolver(materialSchema)
   });
 
