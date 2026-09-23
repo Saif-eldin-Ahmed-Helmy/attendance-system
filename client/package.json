@@ -1,5 +1,5 @@
 {
-  "name": "pets",
+  "name": "attendance-system-client",
   "private": true,
   "version": "0.0.0",
   "proxy": "http://localhost:3001",
